@@ -1,0 +1,72 @@
+---
+title: "STT_465Lecture_Sep_4"
+author: "Sam Isken"
+date: "September 4, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Check working directory to ensure we are in STT 465 
+```{r}
+print(getwd())
+library(gibbs.met)
+library(openintro)
+```
+
+JAGS: Just Another Gibbs Sample 
+
+BUGS: Win, Open 
+
+RStudio: key geaphical user interface 
+
+Gibbs Sampling in R 
+Belief & Probability Example 
+
+weight~height +epsilon_i 
+
+control L : clear console 
+q() : quit R 
+
+open intro: online statistics book 
+
+
+```{r}
+cars
+```
+
+```{r}
+hist(cars$weight)
+plot(cars$weight)
+lm(log(cars$price)~cars$weight+cars$mpgCity)
+x <- table(cars$type)
+barplot(x)
+```
+
+  
+What we need to know for Bayesian R Class 
+Vector: most work done with vectors (subsetting etc)
+```{r}
+x <- c(1,2,3,0,15)
+x[x<=3]
+y <- x[x<=3]
+x
+y
+```
+Functions 
+
+```{r}
+Y_first <- function(x){
+  result = 5*x-1.3
+  return(result)
+}
+Y_first(x)
+```
+For loops
+Simulations with known PDFs 
+```{r}
+
+```
+

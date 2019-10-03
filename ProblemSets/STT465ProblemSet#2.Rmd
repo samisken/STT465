@@ -1,0 +1,367 @@
+---
+title: "STT465ProblemSet#2"
+author: "Sam Isken"
+date: "September 25, 2019"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+STT 465 - Fall 2019
+
+Homework 2 - Due 10/02/2019 (In Class)
+
+Instruction:
+-When using R in any problem, copy the code and results onto your word document under that question number and add any required comments. You will lose points if I do not
+see your codes. 
+
+You should present a stapled document when multiple pages are used. The grader will not be held responsible for any loss of pages.
+
+1. Exercise 3.1 on Page 227 (Textbook)
+
+3.1
+
+Sample Survey: Suppose we are going to sample 100 individuals from a county (of size much larger than 100) and ask each sampled person whether they support policy or not.
+
+Let $Y_i=1$ if person i in the sample supports the policy, and $Y_i=0$ otherwise.
+
+a) Assume $Y_1 , ... Y_n$ are, conditional on $\theta$, i.i.d binary random variable with expectation $\theta$.
+
+Write down the joint distribution of $ Pr(Y_1 = Y_1,...Y_100=y_{100}| \theta) $ 
+
+in a compact form. 
+
+
+Also write down the form of 
+
+$Pr(\Sigma_{i=1}^{100}Y_i = y | \theta) $
+
+
+
+The Joint Distribution of $ Pr(Y_1 = Y_1,...Y_100=y_{100}| \theta) $ is given by: 
+
+$$ \text{Pr}(Y_i = y|\theta) = {100 \choose y} \theta^y (1-\theta)^{100-y} $$
+
+This is because we assume $ Y_1 , ... Y_n $ are, conditional on $ \theta $, i.i.d binary random variable with expectation $ \theta $.
+
+For the second part of the question let us examine $ Pr(\Sigma_{i=1}^{100}Y_i = y | \theta) $
+
+$$Pr(\Sigma_{i=1}^{100}Y_i = y | \theta) = \theta = \theta \Sigma^{100}_{i=1} yi *(1-\theta)^{100} * \Sigma^{100}_{i=1} yi$$
+
+b) For the moment, suppose you believed that $\theta \in \{0.0, 0.1, . ,0.9, 1.0\} $. Given that the result of the survey were  $\Sigma_{i=1}^{100} Y_i = 57$, compute $\text{Pr(}\Sigma_{i=1}^{100} Y_i = 57 | \theta) $ for each of these 11 values of $\theta$ and plot these probabilities as a function of $\theta$.
+
+We first examine the Joint Distribution: 
+
+$$ \text{Pr}(Y_i = y|\theta) = {100 \choose y} \theta^y (1-\theta)^{100-y} $$
+For this problem we start back at our joint distribution. We then will assume (given the context of the problem) that 
+
+$$ \text{Pr(}\Sigma_{i=1}^{100} Y_i = 57 | \theta) $$
+
+for a set of $\theta$'s :
+
+$$\theta \in \{0.0, 0.1, . ,0.9, 1.0\} $$
+Thus: 
+
+
+$$ \text{Pr}(Y_i = 57|\theta) = {100 \choose 57} \theta^{57} (1-\theta)^{100-57=43} $$
+
+Let us now implement this in R: 
+
+```{r}
+#Create set of thetas
+theta_set = c(0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1)
+#Function to get values of joint pmf given set of thetas
+joint_pmf <- function(set_of_theta){
+  for (variable in set_of_theta) {
+    theta <- variable
+    result <- (choose(100,57)) * (theta^(57)) * (1-theta)^(43)
+    print(result)
+  }
+}
+
+joint_pmf(theta_set)
+
+#List of values outputted from functino
+fin_list <- c(0,4.107157e-31,3.738459e-16,1.306895e-08,0.0002285792,
+              0.03006864,0.06672895,0.001853172,1.003535e-07,9.395858e-18,0)
+
+#plot of posterior distribution
+posterior_dist_plot <- barplot(fin_list)
+```
+
+c) Now suppose you originally has no prior information to believe one of these $\theta$ values
+over another, and so Pr($\theta$ = 0.0) = Pr($\theta$ = 0.1) = ... = Pr($\theta$ = 0.9) = Pr($\theta$ = 1.0). Use Bayes' rule to compute Pr($\theta | \Sigma_{i=1}^{100} Y_i = 57$)
+for each $\theta$ value. Make a plot of this posterior distribution as
+a function of $\theta$.
+
+The plot below shows our posterior distribition. 
+
+```{r}
+posterior_dist_plot <- barplot(fin_list)
+```
+
+Now let us use Bayes' rule to compute Pr($\theta | \Sigma_{i=1}^{100} Y_i = 57$) for each $\theta$ value.
+
+Since:
+
+```{r}
+print(length(theta_set))
+```
+
+We assume 
+
+$$ \text{Pr}(\theta) = 1/11, | \theta \sim \text{}iid$$
+And we know: 
+
+Posterior Distribution = Prior Distribution * Likelihood Function
+
+Thus: 
+
+$$ \text{Pr}(\theta|y) = \text(Posterior Distribution) = \frac{{100 \choose 57}\theta^{57} (1-\theta)^{43} (1/11)} {p(y)}$$
+
+This is the desired answer, the posterior distribution.
+
+d) Now suppose you allow $\theta$ to be any value in the interval [0,1]. Using the uniform prior density for $\theta$, so that p($\theta$) = 1, plot the posterior density 
+
+p($\theta$) × Pr($\Sigma_{i=1}^{100} Y_i = 57|\theta$) 
+
+as a function of $\theta$.
+
+```{r}
+#Set theta to be the range [0,1]
+theta_range <- seq(0,1,length=500)
+#Set theta probability
+prob_theta = 1 
+posterior_dist_func <- (choose(100,57))*(theta_range^57)*(1-theta_range)^43
+#Plot tjos posteriord distribution
+plot(theta_range,posterior_dist_func)
+```
+
+
+e) As discussed in this chapter, the posterior distribution of $\theta$ is:
+beta(1 + 57, 1 + 100 - 57). 
+
+Plot the posterior density as a function of $\theta$. Discuss the relationships among all of the plots you have made for this exercise.
+
+```{r}
+posterior_dist_theta <- dbeta(theta_range,1 + 57, 1 + 100 - 57)
+plot(theta_range,posterior_dist_theta)
+```
+
+As you can see all of these graphs are equivalent. The posterior distribution of p($\theta$) × Pr($\Sigma_{i=1}^{100} Y_i = 57|\theta$) when plotted is shown to be the same as $\theta$~beta(1 + 57, 1 + 100 - 57). This makes sense as we disscussed the flexibility of the Beta distribution and its similiarity in posteriors to other distributions. 
+
+
+
+2. The "fish" data set in homework 2 folder on D2L contains data on the # of fish caught by
+campers in a park.
+
+```{r Import Data Set}
+#Use read csv function in order read in "fish.csv" data set 
+fish <- read.csv(file = "fish.csv", header = TRUE)
+fish
+```
+
+a) Present a frequency table using R with observed frequencies for x (x=# of fish caught)
+
+```{r 2(a) Frequency Table}
+table(fish$count)
+```
+
+b) Assuming a Poisson model, provide the maximum likelihood estimate of the Poisson parameter ("lambda") and an approximate 95% CI.
+
+The PDF of the poisson distribution is given by. 
+
+$$p(X = x)=\frac{e^{-\lambda} \cdot \lambda^{x}}{x !} $$ 
+
+To find the Maximum likelihood estimate of $\lambda$ we must have (for $X_1,X_2,X_3,...,X_n$ iid Poisson RVs) a joint frequency that is the product of the marginal frequency functions, Therefore, the log likelihood is given by: 
+
+$$ \text{likelihood}(\lambda) = \Sigma_{i=1}^n (X_i \text{log}(\lambda) - \lambda - logX_i!$$ 
+
+If we simplify further it is clear that: 
+
+$$ \text{likelihood}(\lambda) = log\lambda\Sigma_{i=1}^n X_i - n\lambda - \Sigma_{i=1}^n logX_i!$$ 
+
+We know (from STT 442 - Mathematical Statistics) that we find the MLE for an estimator $\lambda$ by taking the first derivitive of a likelihood function and setting it equal to 0: 
+
+$$ \text{likelihood`}(\lambda) = \frac{1}{\lambda} \Sigma_{i=1}^n - n = 0$$ 
+
+This implies that the estimate of the estimator $\lambda$ in the Poisson distribution is given by: 
+
+$$ \hat{\lambda} = \overline{X}$$
+
+Since, under the Poisson distribution: 
+
+$$\text{Mean} = \text{Variance} = \hat{\lambda} $$
+This implies the 95% CI is given by: 
+
+$$\hat{\lambda} \pm  1.96\sqrt{\hat{\lambda}/n}$$
+
+Thus in our case: 
+
+```{r}
+#Frequency table 
+table(fish$count)
+#Find our lambda hat 
+lambda_hat <- mean(table(fish$count))
+print(lambda_hat)
+#Get length of table, n for CI
+n <- length(table(fish$count))
+CI = c(lambda_hat-(1.96*sqrt(lambda_hat/n)),lambda_hat+(1.96*sqrt(lambda_hat/n)))
+print(CI)
+```
+
+$$ \hat{\lambda} = 10 , \text{CI(95%)} = (8.760387 ,  11.239613) $$
+
+c) Present in a bar-plot the observed frequencies (from question a) and the predicted
+frequencies according to a Poisson model with a rate parameter equal to the maximum
+likelihood estimate that you reported in (b).
+
+```{r}
+#Bar plot of the observed frequencies 
+barplot(table(fish$count))
+
+#Create vector of categories tp predict 
+Count_Categories <- c(0,1,2,3,4,5,6,7,8,9,10,11,13,14,15,16,21,22,29,30,31,32,38,65,149)
+lambda_hat
+
+#Create e 
+e <- exp(1)
+
+poisson_func <- function(Set_of_counts){
+  for (variable in Set_of_counts) {
+    x <- variable
+    result <- (e^(-10) * 10^x)/factorial(x)
+    print(result)
+  }
+}
+
+poisson_func(Count_Categories)
+
+#Out put of function
+Count_probs <- c(4.539993e-05,0.0004539993,0.002269996,0.007566655,0.01891664,0.03783327,0.06305546,0.09007923,0.112599,0.12511,0.12511,0.1137364,0.07290795,0.0520771,0.03471807,0.02169879,0.0008886101,0.0004039137,5.134715e-07,1.711572e-07,5.521199e-08,1.725375e-08,8.6803e-12,5.504589e-31,1.191936e-116)
+
+#Plotting predicted values to compare 
+plot(Count_Categories,Count_probs,type = "s")
+
+```
+
+I plotted the predicted probability of each count above in order to compare with the actual values. 
+
+d) Comment the results that you obtained in c. Does the Poisson model fits well this data?
+
+From this we can tell the Poisson model does fit our data well! The plot of our predicted probabilities is relatively similiar to the plot of the actual occurences of each quantity. This is not suprising as our data was right skewed and the poisson distribution is often used to measure frequencies. 
+
+
+3.6
+
+
+Exponential family expectation: 
+
+Let 
+
+$$ p(y|\phi)=c(\phi)h(y)exp\{\phi t(y)\}$$ 
+be an exponential family model.
+
+a) Take derivatives with respect to ???? of both sides of the equation
+
+$$ \int p(y|\phi)dy=1$$
+
+to show that 
+
+$$ E [ t(Y)|\phi ]  = - \frac{c'(\phi)}{c(\phi)}$$
+
+We begin with: 
+
+$$  p(y|\phi)=c(\phi)h(y)exp\{\phi t(y)\}$$
+
+Let us now integrate: 
+
+$$ \frac{d}{d\theta}\int p(y|\phi)dy= 0 $$ 
+
+$$\int \frac{d}{d\theta} p(y|\phi)dy= 0 $$
+
+Thus: 
+
+$$\int \frac{d^2}{d\theta^2} p(y|\phi)dy= 0 $$
+
+Thus for the exponential distribution: 
+$$\frac{d}{d\theta}p(y|\phi)=[a(y)c(\theta)+c'(\theta)]p(y|\theta)$$
+$$\int \frac{d}{d\theta} p(y|\phi)dy= \int[a(y)c(\theta)+c'(\theta)]p(y|\theta)d\theta $$
+
+$$ 0 = c(\theta)\int a(y)p(y|\theta)dy +c'(\theta)\int p(y|\phi) dy = 0 = c(\theta)E[a(Y)]+c'(\theta)$$
+
+Therefore
+
+$$ E [ t(Y)|\phi ]  = - \frac{c'(\phi)}{c(\phi)}$$
+ 
+as desired. 
+
+b) Let 
+
+
+$$ p(\phi) \propto c(\phi)^{\eta_0}e^{\eta_0 t_0 \phi} $$
+be the prior distribution for $\phi$. Calculate $\frac{dp(\phi)}{d\phi}$ and, using the fundemental theorem of calculus disscuss what must be true so that 
+
+$$ E\left[-\frac{c't(\phi)}{c(\phi)}\right]=t_{0} $$ 
+
+We know that 
+
+$$  \int p(\phi)d\phi = 1 = \int \frac{dp(\phi)}{d\phi}d\phi $$ 
+If we integrate with resoect to $ \theta $ we will get: 
+
+$$n_0t_0 + n_0 E\left[-\frac{c't(\phi)}{c(\phi)}\right]=0 $$ 
+
+So  
+
+$$ \int \frac{dp(\phi)}{d\phi}d\phi = 0 $$
+
+must be true to assume 
+
+$$ E\left[-\frac{c't(\phi)}{c(\phi)}\right]=t_{0} $$ 
+
+
+3.9
+Galenshore distribution: An unknown quantity Y has a Galenshore($\alpha,\theta$) distribution if its' density is given by: 
+
+$$p(y)=\frac{2}{\Gamma(a)} \theta^{2 a} y^{2 a-1} e^{-\theta^{2} y^{2}}  $$ 
+
+For y>0, $\theta$ >0 and $\alpha$>0. Assume $\alpha$ is known, For this density: 
+
+$$E[Y | \theta]=\frac{\Gamma\left(a+\frac{1}{2}\right)}{\theta \Gamma(a)} ; \quad E\left[Y^{2} | \theta\right]=\frac{a}{\theta^{2}} $$
+
+
+a) Identify a class of conjugate prior densities for $\theta$.
+
+Let us denote a class of conjugate prior densistes for $\theta$ by: 
+
+$$ \eta(\theta), \theta \sim \text{Galenshore}(c,d) $$
+
+
+b) Let $Y_1 , ... , Y_n \sim \text{iid Galenshore} (\alpha,\theta)$. 
+
+Find the posterior distribution of $\theta$ given $Y_1,...,Y_n$, using a prior from your conjugate class. 
+$$ p(\theta|y_1,...,y_n) \propto \theta^{2a_0 -1}exp{ \{-\theta^2_0 \theta^2 \}} \Pi_{i=1}^n \theta^{2a} exp{ \{-\theta^2y_i^2  \} } $$
+
+which can be further simplified to:
+
+$$ \begin{array}{l}{=\theta^{2 a_{0}-1} \exp \left\{-\theta_{0}^{2} \theta^{2}\right\} \theta^{2 n a} \exp \left\{-\theta^{2} \sum_{i=1}^{n} y_{i}^{2}\right\}} \\ {=\theta^{2\left(n a+a_{0}\right)-1} \exp \left\{-\theta^{2}\left(\theta_{0}^{2}+\sum_{i=1}^{n} y_{i}^{2}\right)\right\}}\end{array} $$ 
+
+This change in layout shows that the posterior distribution of $ \theta $ is: galenshore($ na +a_0 , \sqrt{\theta^2_0 + \Sigma_{i=1}^n y_i^2}$).
+
+c) Write down $\frac{p(\theta_{\alpha} | Y_1 , ..., Y_n)}{p(\theta_b | Y_1,...,Y_n)}$ and simplify. Identify a sufficient statistic. 
+
+We can simplify this probability to the following: 
+
+$$ \begin{aligned} \frac{p\left(\theta_{a} | y_{1}, \ldots, y_{n}\right)}{p\left(\theta_{b} | y_{1}, \ldots, y_{n}\right)} &=\frac{\theta_{a}^{2\left(n a+a_{0}\right)-1} \exp \left\{-\theta_{a}^{2}\left(\theta_{0}^{2}+\sum_{i=1}^{n} y_{i}^{2}\right)\right\}}{\theta_{b}^{2\left(n a+a_{0}\right)-1} \exp \left\{-\theta_{b}^{2}\left(\theta_{0}^{2}+\sum_{i=1}^{n} y_{i}^{2}\right)\right\}} \\ &=\left(\frac{\theta_{a}}{\theta_{b}}\right)^{2\left(n a+a_{0}\right)-1} \exp \left\{-\theta_{0}^{2}\left(\theta_{a}^{2}-\theta_{b}^{2}\right)\right\} \exp \left\{-\sum_{i=1}^{n} y_{i}^{2}\left(\theta_{a}^{2}-\theta_{b}^{2}\right)\right\} \end{aligned}  $$
+
+From this we see that $\theta_a/\theta_b$ | y up to $\Sigma_{i=1}^n y_i^2 $. This implies that $\Sigma_{i=1}^n y_i^2 $ is a sufficient statistic for $theta$. 
+
+d) Determine $E[\theta|y_1,...,y_n]$
+
+$$ \mathbb{E}\left[\theta | y_{1}, \ldots, y_{n}\right]=\frac{\Gamma\left(n a+a_{0}+\frac{1}{2}\right)}{\sqrt{\left(\theta_{0}^{2}+\sum_{i=1}^{n} y_{i}^{2}\right)} \Gamma\left(n a+a_{0}\right)}  $$
+
