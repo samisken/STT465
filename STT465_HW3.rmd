@@ -1,0 +1,245 @@
+---
+title: "STT465_HW3"
+author: "Sam Isken"
+date: "October 16, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+  
+STT 465 – Fall 2019
+Homework 3 – Due 10/23/2019 (In Class)
+Instruction:
+
+When using R in any problem, copy the code and results onto your word document under that question number and add any required comments. You will lose points if I do not see your codes. You should present a stapled document when multiple pages are used. The grader will not be held responsible for any loss of pages.
+
+The crab data set (in D2L) contains information on the Crab width in cm per female crab.
+After downloading onto your computer, import the data into R using:
+
+```{r}
+crab <- read.table("crab.txt",header=TRUE)
+head(crab)
+```
+
+1. Maximum Likelihood Inference of the mean in a Gaussian Model
+
+Use the carapace width variable to answer the following questions:
+
+a) Provide summary statistics (mean, variance, range, and histogram).
+
+```{r}
+
+mean_list <- lapply(crab, mean)
+variance_list <- lapply(crab,var)
+range_list <- lapply(crab,range)
+list_all <- list(mean_list,variance_list,range_list)
+result <- setNames(do.call(rbind.data.frame, list_all), c("color", "spine","width","nSatellites","weight"))
+result$Category <- c("Means","Variances","Range_lower","Range_upper")
+result
+```
+
+```{r}
+library(tidyr)
+library(ggplot2)
+
+crab %>% gather() %>% head()
+ggplot(gather(crab), aes(value)) + 
+    geom_histogram(bins = 10) + 
+    facet_wrap(~key, scales = 'free_x')
+
+```
+
+b) Write the likelihood function under Gaussian assumptions.
+
+The Gaussian Assumptions attempt to estimate $\mu , \sigma$ such that our data is distributed as close to normally as possible. (Thus having a pdf of:
+
+$$ N(x)=\frac{1}{\sigma \sqrt{2 \pi}} e^{-\frac{(x-\mu)^{2}}{2 \sigma^{2}}} $$ 
+
+and a plotted distribution of:
+
+```{r}
+x <- seq(-4, 4, length=100)
+plot(dnorm(x))
+```
+
+).
+
+To do this we make 2 assumptions: 
+
+(mu and sigma must be known)
+
+1. Data must be independently distributed.
+2. Data must be identically distributed.
+
+(This can be summarized as iid)
+
+$$ f(x_1 , ...,x_n|\mu , \sigma) = \Pi \frac{1}{\sigma \sqrt{2\pi}} e^{\frac{-(x_i -\mu)^2}{2\sigma^2}} $$
+
+c) Derive the Maximum Likelihood estimator of the mean parameter (recall the steps:
+
+1. write the likelihood, 
+
+Let us first identify our likelihood function to estimate $\hat{\mu}$ assuming a Gaussian distribution
+
+$$ f(x_1 , ...,x_n|\mu , \sigma) = \Pi \frac{1}{\sigma \sqrt{2\pi}} e^{\frac{-(x_i -\mu)^2}{2\sigma^2}} $$
+
+2. simplify as much as possible, 
+
+We can simplify this to be: 
+
+$$ f(x_1 , ...,x_n|\mu , \sigma) = \frac{(2\pi)^{-n/2}}{\sigma^n} \text{exp} [-\frac{\Sigma(x_i-\mu)^2}{2\sigma^2}]  $$ 
+
+3. take the log, take derivative with respect to the mean,
+
+Now let us take the natural log of $f(x_1 , ...,x_n|\mu , \sigma)$ 
+
+$$ \text{ln}(f(x_1 , ...,x_n|\mu , \sigma)) = \frac{1}{2}\text{n ln}(2\pi)-\text{n ln}(\sigma)-\frac{\Sigma(x_i-\mu)^2}{2\sigma^2}$$
+
+Now let us take the derivitive with respect to $\mu$ (because of this many of the early terms drop out since they are constants)
+
+$$ \frac{\delta(\text{ln}(f(x_1 , ...,x_n|\mu , \sigma)))}{\delta(\mu)} = \frac{\Sigma(x_i-\mu)^2}{2\sigma^2}  $$
+
+4. set the derivative equal to zero,
+
+$$ \frac{\Sigma(x_i-\mu)^2}{2\sigma^2} = 0  $$
+
+
+5. solve for the mean ).
+
+$$ \hat{\mu} = \frac{\Sigma x_i}{n}$$ 
+
+This is expected as the MLE for a Gaussian distribution for $\mu$ is the sample mean. 
+
+d) Provide the Max. Likelihood estimate of the mean for this data set together with an approximate 95% CI (assume Central Limit Theorem).
+
+
+
+```{r}
+#Which variable? 
+#Did for all variables 
+mle_list <- lapply(crab, mean)
+print(mle_list)
+
+n <- nrow(crab)
+
+mle_color <- 3.439306 # xbar
+mle_spine <- 2.485549 # xbar
+mle_width <- 26.29884 # xbar
+mle_nSatellites <- 2.919075 # xbar
+mle_weight <- 2437.191 # xbar
+
+sigma_color <- sqrt(var(crab$color)) # sigma 
+sigma_spine <- sqrt(var(crab$spine)) # sigma
+sigma_width <- sqrt(var(crab$width)) # sigma
+sigma_nSatellites <- sqrt(var(crab$nSatellites)) # sigma
+sigma_weight <- sqrt(var(crab$weight)) # sigma
+
+# Confidence Intervals 
+color_CI <- c(mle_color - (1.96*(sigma_color/sqrt(n))),mle_color + (1.96*(sigma_color/sqrt(n))))
+spine_CI <- c(mle_spine - (1.96*(sigma_spine/sqrt(n))),mle_spine + (1.96*(sigma_spine/sqrt(n))))
+width_CI <- c(mle_width - (1.96*(sigma_width/sqrt(n))),mle_width + (1.96*(sigma_width/sqrt(n))))
+nSatellites_CI <- c(mle_nSatellites - (1.96*(sigma_nSatellites/sqrt(n))),mle_nSatellites + (1.96*(sigma_nSatellites/sqrt(n))))
+weight_CI <- c(mle_weight - (1.96*(sigma_weight/sqrt(n))),mle_weight + (1.96*(sigma_weight/sqrt(n))))
+  
+```
+
+
+2. Bayesian Inference: Normal Model
+
+a) Assume the normal model with inference for $\mu$ where $\sigma^{2}$ is known. Analyze the carapace width of crabs with the normal model with conjugate prior distribution for $\mu$ in which $\{ \mu_0 = 20, \sigma^2_0 = 1.2, \kappa_0 \}$ and $\sigma^2_0 = \frac{\sigma^2}{\kappa_0}$ . Find the posterior distribution for $\mu$.
+
+We know that: 
+
+$$ \kappa_0 = \frac{n}{n+\frac{\sigma^2}{\sigma^2_0}} $$ 
+
+Let us find our n:
+
+```{r}
+n <- length(crab$width)
+n
+```
+
+thus, n = 173.
+
+Let us now calculate our credibility factor $\kappa_0$.
+
+$$ \kappa_0 = \frac{173}{173 +\frac{\sigma^2}{1.2}} $$ 
+
+Let us plug that into our formula for $\sigma^2_0$ to solve for $\sigma^2$.
+
+```{r}
+sigma_sq <- var(crab$width)
+```
+
+$$ \sigma^2_0 = \frac{\sigma^2}{\kappa_0} = \frac{\sigma^2}{\frac{173}{173 +\frac{\sigma^2}{1.2}}} = 1.2 $$ 
+
+
+(Scratch work shown on attached sheet)
+
+Thus we discover: 
+
+$$ \sigma^2 = 1.2 $$
+So 
+
+$$ \kappa_0 = \frac{173}{173 +\frac{1.2}{1.2}} = .99425 $$ 
+
+Let us now calculate the posterior mean, median, mode and variance. 
+
+$$ \mu_* = (1-\kappa_0)\mu_0 + \kappa_0*\bar{Y} $$ 
+
+where $\bar{Y} $ is
+
+```{r}
+ybar <- mean(crab$width)
+ybar
+```
+
+thus 
+
+$$ \mu_* = (1-.99425)20 + .99425*26.29884 $$ 
+
+```{r}
+mustar <- ((1-.99425)*20) + (.99425*26.29884)
+mustar
+```
+
+Since the posterior distribution is normal, the posterior mean = posterior median = posterior mode. 
+
+Let us now calculate the posterior variance:
+
+$$ \sigma^2_* = \frac{\kappa_0 * \sigma^2}{n} $$ 
+```{r}
+sigma_squared_star <- (.99425 * 1.2)/173
+sigma_squared_star
+```
+
+Thus the posterior distribution of $\mu$ is: 
+
+$$\mu|y \text{~} \text{N} (26.26262 \text{ , } 0.006896532)$$
+
+b) Construct a 90% credibility interval for $\mu$𝜇 and interpret your result.
+
+$$\mu_* \pm Z_.05 \sqrt{\sigma^2_*} $$ 
+
+```{r}
+abs(qnorm(.05,lower.tail=TRUE))
+```
+
+Thus: 
+
+$$ 26.26262 \pm 1.644854(\sqrt{0.006896532}) $$
+
+```{r}
+#Credibility Interval Calculated
+lower_bound <- 26.26262 - (1.644854*(sqrt(0.006896532)))
+upper_bound <- 26.26262 + (1.644854*(sqrt(0.006896532)))
+lower_bound
+upper_bound
+```
+
+c) Plot the prior density, likelihood and posterior density on a single plot clearly indicating each graph.
+
+
+
