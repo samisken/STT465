@@ -2,7 +2,10 @@
 title: "STT465_HW3"
 author: "Sam Isken"
 date: "October 16, 2019"
-output: html_document
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -117,7 +120,6 @@ d) Provide the Max. Likelihood estimate of the mean for this data set together w
 
 
 ```{r}
-#Which variable? 
 #Did for all variables 
 mle_list <- lapply(crab, mean)
 print(mle_list)
@@ -240,6 +242,51 @@ upper_bound
 ```
 
 c) Plot the prior density, likelihood and posterior density on a single plot clearly indicating each graph.
+
+```{r}
+y = crab$width # data
+n = length(y)
+sigma2= 1.2 # known mean
+
+#### Parameters for prior density (usually called hyperparameters)
+a=3
+b=2
+
+a0=3 # prior shape parameter
+b0=2  # prior scale(rate) parameter
+options(digits=4)
+a=a0+n/2; 
+c(a,sigma2,b)
+
+
+# Inference on sigma2 = 1/lambda 
+
+sig2priormean=b0/(a0-1)  # Prior mean for sigma^2
+
+sig2postmean=b/(a-1)
+
+### 95% Cred. Int
+
+sig2cr=1/qgamma(c(0.975,0.025),a,b)
+
+c(ybar, mustar, sig2cr)
+
+sig2v=seq(0.01,10,0.01) # HERE 
+prior=dgamma(1/sigma_squared_star,a0,b0)/sigma_squared_star^2
+post=dgamma(1/sigma_squared_star,a,b)/sigma_squared_star^2;
+like=dgamma(1/sigma_squared_star,a-a0-1,b-b0+0)/sigma_squared_star^2
+plot(c(0,10),c(0,1.2),type="n",
+     main="Inference on the model variance parameter",
+     xlab="sigma^2 = 1/lambda",ylab="density/likelihood")
+lines(sigma_squared_star,prior,lty=3,lwd=2); lines(sigma_squared_star,like,lty=3,lwd=2)
+lines(sigma_squared_star,post,lty=3,lwd=2)
+
+points(sig2cr,c(0,0),pch=rep(16,2),cex=rep(1.5,2))
+legend(1.8,1.2,
+       c("Prior density","Likelihood function (normalised)","Posterior density"),
+       lty=c(1,2,3),lwd=c(2,2,2))
+
+```
 
 
 

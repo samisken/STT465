@@ -1,0 +1,639 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{unicode=true,
+            pdftitle={STT465\_HW3},
+            pdfauthor={Sam Isken},
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{0}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+
+%%% Change title format to be more compact
+\usepackage{titling}
+
+% Create subtitle command for use in maketitle
+\newcommand{\subtitle}[1]{
+  \posttitle{
+    \begin{center}\large#1\end{center}
+    }
+}
+
+\setlength{\droptitle}{-2em}
+
+  \title{STT465\_HW3}
+    \pretitle{\vspace{\droptitle}\centering\huge}
+  \posttitle{\par}
+    \author{Sam Isken}
+    \preauthor{\centering\large\emph}
+  \postauthor{\par}
+      \predate{\centering\large\emph}
+  \postdate{\par}
+    \date{October 16, 2019}
+
+
+\begin{document}
+\maketitle
+
+STT 465 â Fall 2019 Homework 3 â Due 10/23/2019 (In Class)
+Instruction:
+
+When using R in any problem, copy the code and results onto your word
+document under that question number and add any required comments. You
+will lose points if I do not see your codes. You should present a
+stapled document when multiple pages are used. The grader will not be
+held responsible for any loss of pages.
+
+The crab data set (in D2L) contains information on the Crab width in cm
+per female crab. After downloading onto your computer, import the data
+into R using:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{crab <-}\StringTok{ }\KeywordTok{read.table}\NormalTok{(}\StringTok{"crab.txt"}\NormalTok{,}\DataTypeTok{header=}\OtherTok{TRUE}\NormalTok{)}
+\KeywordTok{head}\NormalTok{(crab)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   color spine width nSatellites weight
+## 1     3     3  28.3           8   3050
+## 2     4     3  22.5           0   1550
+## 3     2     1  26.0           9   2300
+## 4     4     3  24.8           0   2100
+## 5     4     3  26.0           4   2600
+## 6     3     3  23.8           0   2100
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Maximum Likelihood Inference of the mean in a Gaussian Model
+\end{enumerate}
+
+Use the carapace width variable to answer the following questions:
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\tightlist
+\item
+  Provide summary statistics (mean, variance, range, and histogram).
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mean_list <-}\StringTok{ }\KeywordTok{lapply}\NormalTok{(crab, mean)}
+\NormalTok{variance_list <-}\StringTok{ }\KeywordTok{lapply}\NormalTok{(crab,var)}
+\NormalTok{range_list <-}\StringTok{ }\KeywordTok{lapply}\NormalTok{(crab,range)}
+\NormalTok{list_all <-}\StringTok{ }\KeywordTok{list}\NormalTok{(mean_list,variance_list,range_list)}
+\NormalTok{result <-}\StringTok{ }\KeywordTok{setNames}\NormalTok{(}\KeywordTok{do.call}\NormalTok{(rbind.data.frame, list_all), }\KeywordTok{c}\NormalTok{(}\StringTok{"color"}\NormalTok{, }\StringTok{"spine"}\NormalTok{,}\StringTok{"width"}\NormalTok{,}\StringTok{"nSatellites"}\NormalTok{,}\StringTok{"weight"}\NormalTok{))}
+\NormalTok{result}\OperatorTok{$}\NormalTok{Category <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"Means"}\NormalTok{,}\StringTok{"Variances"}\NormalTok{,}\StringTok{"Range_lower"}\NormalTok{,}\StringTok{"Range_upper"}\NormalTok{)}
+\NormalTok{result}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##        color    spine     width nSatellites     weight    Category
+## 2  3.4393064 2.485549 26.298844    2.919075   2437.191       Means
+## 21 0.6430972 0.681476  4.448138    9.912018 332958.097   Variances
+## 3  2.0000000 1.000000 21.000000    0.000000   1200.000 Range_lower
+## 4  5.0000000 3.000000 33.500000   15.000000   5200.000 Range_upper
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(tidyr)}
+\KeywordTok{library}\NormalTok{(ggplot2)}
+
+\NormalTok{crab }\OperatorTok{%>%}\StringTok{ }\KeywordTok{gather}\NormalTok{() }\OperatorTok{%>%}\StringTok{ }\KeywordTok{head}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##     key value
+## 1 color     3
+## 2 color     4
+## 3 color     2
+## 4 color     4
+## 5 color     4
+## 6 color     3
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{gather}\NormalTok{(crab), }\KeywordTok{aes}\NormalTok{(value)) }\OperatorTok{+}\StringTok{ }
+\StringTok{    }\KeywordTok{geom_histogram}\NormalTok{(}\DataTypeTok{bins =} \DecValTok{10}\NormalTok{) }\OperatorTok{+}\StringTok{ }
+\StringTok{    }\KeywordTok{facet_wrap}\NormalTok{(}\OperatorTok{~}\NormalTok{key, }\DataTypeTok{scales =} \StringTok{'free_x'}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{STT465_HW3_files/figure-latex/unnamed-chunk-3-1.pdf}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{1}
+\tightlist
+\item
+  Write the likelihood function under Gaussian assumptions.
+\end{enumerate}
+
+The Gaussian Assumptions attempt to estimate \(\mu , \sigma\) such that
+our data is distributed as close to normally as possible. (Thus having a
+pdf of:
+
+\[ N(x)=\frac{1}{\sigma \sqrt{2 \pi}} e^{-\frac{(x-\mu)^{2}}{2 \sigma^{2}}} \]
+
+and a plotted distribution of:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{x <-}\StringTok{ }\KeywordTok{seq}\NormalTok{(}\OperatorTok{-}\DecValTok{4}\NormalTok{, }\DecValTok{4}\NormalTok{, }\DataTypeTok{length=}\DecValTok{100}\NormalTok{)}
+\KeywordTok{plot}\NormalTok{(}\KeywordTok{dnorm}\NormalTok{(x))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{STT465_HW3_files/figure-latex/unnamed-chunk-4-1.pdf}
+
+).
+
+To do this we make 2 assumptions:
+
+(mu and sigma must be known)
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Data must be independently distributed.
+\item
+  Data must be identically distributed.
+\end{enumerate}
+
+(This can be summarized as iid)
+
+\[ f(x_1 , ...,x_n|\mu , \sigma) = \Pi \frac{1}{\sigma \sqrt{2\pi}} e^{\frac{-(x_i -\mu)^2}{2\sigma^2}} \]
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{2}
+\tightlist
+\item
+  Derive the Maximum Likelihood estimator of the mean parameter (recall
+  the steps:
+\end{enumerate}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  write the likelihood,
+\end{enumerate}
+
+Let us first identify our likelihood function to estimate \(\hat{\mu}\)
+assuming a Gaussian distribution
+
+\[ f(x_1 , ...,x_n|\mu , \sigma) = \Pi \frac{1}{\sigma \sqrt{2\pi}} e^{\frac{-(x_i -\mu)^2}{2\sigma^2}} \]
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{1}
+\tightlist
+\item
+  simplify as much as possible,
+\end{enumerate}
+
+We can simplify this to be:
+
+\[ f(x_1 , ...,x_n|\mu , \sigma) = \frac{(2\pi)^{-n/2}}{\sigma^n} \text{exp} [-\frac{\Sigma(x_i-\mu)^2}{2\sigma^2}]  \]
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{2}
+\tightlist
+\item
+  take the log, take derivative with respect to the mean,
+\end{enumerate}
+
+Now let us take the natural log of \(f(x_1 , ...,x_n|\mu , \sigma)\)
+
+\[ \text{ln}(f(x_1 , ...,x_n|\mu , \sigma)) = \frac{1}{2}\text{n ln}(2\pi)-\text{n ln}(\sigma)-\frac{\Sigma(x_i-\mu)^2}{2\sigma^2}\]
+
+Now let us take the derivitive with respect to \(\mu\) (because of this
+many of the early terms drop out since they are constants)
+
+\[ \frac{\delta(\text{ln}(f(x_1 , ...,x_n|\mu , \sigma)))}{\delta(\mu)} = \frac{\Sigma(x_i-\mu)^2}{2\sigma^2}  \]
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{3}
+\tightlist
+\item
+  set the derivative equal to zero,
+\end{enumerate}
+
+\[ \frac{\Sigma(x_i-\mu)^2}{2\sigma^2} = 0  \]
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{4}
+\tightlist
+\item
+  solve for the mean ).
+\end{enumerate}
+
+\[ \hat{\mu} = \frac{\Sigma x_i}{n}\]
+
+This is expected as the MLE for a Gaussian distribution for \(\mu\) is
+the sample mean.
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{3}
+\tightlist
+\item
+  Provide the Max. Likelihood estimate of the mean for this data set
+  together with an approximate 95\% CI (assume Central Limit Theorem).
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#Did for all variables }
+\NormalTok{mle_list <-}\StringTok{ }\KeywordTok{lapply}\NormalTok{(crab, mean)}
+\KeywordTok{print}\NormalTok{(mle_list)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## $color
+## [1] 3.439306
+## 
+## $spine
+## [1] 2.485549
+## 
+## $width
+## [1] 26.29884
+## 
+## $nSatellites
+## [1] 2.919075
+## 
+## $weight
+## [1] 2437.191
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{n <-}\StringTok{ }\KeywordTok{nrow}\NormalTok{(crab)}
+
+\NormalTok{mle_color <-}\StringTok{ }\FloatTok{3.439306} \CommentTok{# xbar}
+\NormalTok{mle_spine <-}\StringTok{ }\FloatTok{2.485549} \CommentTok{# xbar}
+\NormalTok{mle_width <-}\StringTok{ }\FloatTok{26.29884} \CommentTok{# xbar}
+\NormalTok{mle_nSatellites <-}\StringTok{ }\FloatTok{2.919075} \CommentTok{# xbar}
+\NormalTok{mle_weight <-}\StringTok{ }\FloatTok{2437.191} \CommentTok{# xbar}
+
+\NormalTok{sigma_color <-}\StringTok{ }\KeywordTok{sqrt}\NormalTok{(}\KeywordTok{var}\NormalTok{(crab}\OperatorTok{$}\NormalTok{color)) }\CommentTok{# sigma }
+\NormalTok{sigma_spine <-}\StringTok{ }\KeywordTok{sqrt}\NormalTok{(}\KeywordTok{var}\NormalTok{(crab}\OperatorTok{$}\NormalTok{spine)) }\CommentTok{# sigma}
+\NormalTok{sigma_width <-}\StringTok{ }\KeywordTok{sqrt}\NormalTok{(}\KeywordTok{var}\NormalTok{(crab}\OperatorTok{$}\NormalTok{width)) }\CommentTok{# sigma}
+\NormalTok{sigma_nSatellites <-}\StringTok{ }\KeywordTok{sqrt}\NormalTok{(}\KeywordTok{var}\NormalTok{(crab}\OperatorTok{$}\NormalTok{nSatellites)) }\CommentTok{# sigma}
+\NormalTok{sigma_weight <-}\StringTok{ }\KeywordTok{sqrt}\NormalTok{(}\KeywordTok{var}\NormalTok{(crab}\OperatorTok{$}\NormalTok{weight)) }\CommentTok{# sigma}
+
+\CommentTok{# Confidence Intervals }
+\NormalTok{color_CI <-}\StringTok{ }\KeywordTok{c}\NormalTok{(mle_color }\OperatorTok{-}\StringTok{ }\NormalTok{(}\FloatTok{1.96}\OperatorTok{*}\NormalTok{(sigma_color}\OperatorTok{/}\KeywordTok{sqrt}\NormalTok{(n))),mle_color }\OperatorTok{+}\StringTok{ }\NormalTok{(}\FloatTok{1.96}\OperatorTok{*}\NormalTok{(sigma_color}\OperatorTok{/}\KeywordTok{sqrt}\NormalTok{(n))))}
+\NormalTok{spine_CI <-}\StringTok{ }\KeywordTok{c}\NormalTok{(mle_spine }\OperatorTok{-}\StringTok{ }\NormalTok{(}\FloatTok{1.96}\OperatorTok{*}\NormalTok{(sigma_spine}\OperatorTok{/}\KeywordTok{sqrt}\NormalTok{(n))),mle_spine }\OperatorTok{+}\StringTok{ }\NormalTok{(}\FloatTok{1.96}\OperatorTok{*}\NormalTok{(sigma_spine}\OperatorTok{/}\KeywordTok{sqrt}\NormalTok{(n))))}
+\NormalTok{width_CI <-}\StringTok{ }\KeywordTok{c}\NormalTok{(mle_width }\OperatorTok{-}\StringTok{ }\NormalTok{(}\FloatTok{1.96}\OperatorTok{*}\NormalTok{(sigma_width}\OperatorTok{/}\KeywordTok{sqrt}\NormalTok{(n))),mle_width }\OperatorTok{+}\StringTok{ }\NormalTok{(}\FloatTok{1.96}\OperatorTok{*}\NormalTok{(sigma_width}\OperatorTok{/}\KeywordTok{sqrt}\NormalTok{(n))))}
+\NormalTok{nSatellites_CI <-}\StringTok{ }\KeywordTok{c}\NormalTok{(mle_nSatellites }\OperatorTok{-}\StringTok{ }\NormalTok{(}\FloatTok{1.96}\OperatorTok{*}\NormalTok{(sigma_nSatellites}\OperatorTok{/}\KeywordTok{sqrt}\NormalTok{(n))),mle_nSatellites }\OperatorTok{+}\StringTok{ }\NormalTok{(}\FloatTok{1.96}\OperatorTok{*}\NormalTok{(sigma_nSatellites}\OperatorTok{/}\KeywordTok{sqrt}\NormalTok{(n))))}
+\NormalTok{weight_CI <-}\StringTok{ }\KeywordTok{c}\NormalTok{(mle_weight }\OperatorTok{-}\StringTok{ }\NormalTok{(}\FloatTok{1.96}\OperatorTok{*}\NormalTok{(sigma_weight}\OperatorTok{/}\KeywordTok{sqrt}\NormalTok{(n))),mle_weight }\OperatorTok{+}\StringTok{ }\NormalTok{(}\FloatTok{1.96}\OperatorTok{*}\NormalTok{(sigma_weight}\OperatorTok{/}\KeywordTok{sqrt}\NormalTok{(n))))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{1}
+\tightlist
+\item
+  Bayesian Inference: Normal Model
+\end{enumerate}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\tightlist
+\item
+  Assume the normal model with inference for \(\mu\) where
+  \(\sigma^{2}\) is known. Analyze the carapace width of crabs with the
+  normal model with conjugate prior distribution for \(\mu\) in which
+  \(\{ \mu_0 = 20, \sigma^2_0 = 1.2, \kappa_0 \}\) and
+  \(\sigma^2_0 = \frac{\sigma^2}{\kappa_0}\) . Find the posterior
+  distribution for \(\mu\).
+\end{enumerate}
+
+We know that:
+
+\[ \kappa_0 = \frac{n}{n+\frac{\sigma^2}{\sigma^2_0}} \]
+
+Let us find our n:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{n <-}\StringTok{ }\KeywordTok{length}\NormalTok{(crab}\OperatorTok{$}\NormalTok{width)}
+\NormalTok{n}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 173
+\end{verbatim}
+
+thus, n = 173.
+
+Let us now calculate our credibility factor \(\kappa_0\).
+
+\[ \kappa_0 = \frac{173}{173 +\frac{\sigma^2}{1.2}} \]
+
+Let us plug that into our formula for \(\sigma^2_0\) to solve for
+\(\sigma^2\).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{sigma_sq <-}\StringTok{ }\KeywordTok{var}\NormalTok{(crab}\OperatorTok{$}\NormalTok{width)}
+\end{Highlighting}
+\end{Shaded}
+
+\[ \sigma^2_0 = \frac{\sigma^2}{\kappa_0} = \frac{\sigma^2}{\frac{173}{173 +\frac{\sigma^2}{1.2}}} = 1.2 \]
+
+(Scratch work shown on attached sheet)
+
+Thus we discover:
+
+\[ \sigma^2 = 1.2 \] So
+
+\[ \kappa_0 = \frac{173}{173 +\frac{1.2}{1.2}} = .99425 \]
+
+Let us now calculate the posterior mean, median, mode and variance.
+
+\[ \mu_* = (1-\kappa_0)\mu_0 + \kappa_0*\bar{Y} \]
+
+where \$\bar\{Y\} \$ is
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ybar <-}\StringTok{ }\KeywordTok{mean}\NormalTok{(crab}\OperatorTok{$}\NormalTok{width)}
+\NormalTok{ybar}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 26.29884
+\end{verbatim}
+
+thus
+
+\[ \mu_* = (1-.99425)20 + .99425*26.29884 \]
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mustar <-}\StringTok{ }\NormalTok{((}\DecValTok{1}\OperatorTok{-}\NormalTok{.}\DecValTok{99425}\NormalTok{)}\OperatorTok{*}\DecValTok{20}\NormalTok{) }\OperatorTok{+}\StringTok{ }\NormalTok{(.}\DecValTok{99425}\OperatorTok{*}\FloatTok{26.29884}\NormalTok{)}
+\NormalTok{mustar}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 26.26262
+\end{verbatim}
+
+Since the posterior distribution is normal, the posterior mean =
+posterior median = posterior mode.
+
+Let us now calculate the posterior variance:
+
+\[ \sigma^2_* = \frac{\kappa_0 * \sigma^2}{n} \]
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{sigma_squared_star <-}\StringTok{ }\NormalTok{(.}\DecValTok{99425} \OperatorTok{*}\StringTok{ }\FloatTok{1.2}\NormalTok{)}\OperatorTok{/}\DecValTok{173}
+\NormalTok{sigma_squared_star}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.006896532
+\end{verbatim}
+
+Thus the posterior distribution of \(\mu\) is:
+
+\[\mu|y \text{~} \text{N} (26.26262 \text{ , } 0.006896532)\]
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{1}
+\tightlist
+\item
+  Construct a 90\% credibility interval for \(\mu\)ð and interpret
+  your result.
+\end{enumerate}
+
+\[\mu_* \pm Z_.05 \sqrt{\sigma^2_*} \]
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{abs}\NormalTok{(}\KeywordTok{qnorm}\NormalTok{(.}\DecValTok{05}\NormalTok{,}\DataTypeTok{lower.tail=}\OtherTok{TRUE}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 1.644854
+\end{verbatim}
+
+Thus:
+
+\[ 26.26262 \pm 1.644854(\sqrt{0.006896532}) \]
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#Credibility Interval Calculated}
+\NormalTok{lower_bound <-}\StringTok{ }\FloatTok{26.26262} \OperatorTok{-}\StringTok{ }\NormalTok{(}\FloatTok{1.644854}\OperatorTok{*}\NormalTok{(}\KeywordTok{sqrt}\NormalTok{(}\FloatTok{0.006896532}\NormalTok{)))}
+\NormalTok{upper_bound <-}\StringTok{ }\FloatTok{26.26262} \OperatorTok{+}\StringTok{ }\NormalTok{(}\FloatTok{1.644854}\OperatorTok{*}\NormalTok{(}\KeywordTok{sqrt}\NormalTok{(}\FloatTok{0.006896532}\NormalTok{)))}
+\NormalTok{lower_bound}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 26.12602
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{upper_bound}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 26.39922
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{2}
+\tightlist
+\item
+  Plot the prior density, likelihood and posterior density on a single
+  plot clearly indicating each graph.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{y =}\StringTok{ }\NormalTok{crab}\OperatorTok{$}\NormalTok{width }\CommentTok{# data}
+\NormalTok{n =}\StringTok{ }\KeywordTok{length}\NormalTok{(y)}
+\NormalTok{sigma2=}\StringTok{ }\FloatTok{1.2} \CommentTok{# known mean}
+
+\NormalTok{#### Parameters for prior density (usually called hyperparameters)}
+\NormalTok{a=}\DecValTok{3}
+\NormalTok{b=}\DecValTok{2}
+
+\NormalTok{a0=}\DecValTok{3} \CommentTok{# prior shape parameter}
+\NormalTok{b0=}\DecValTok{2}  \CommentTok{# prior scale(rate) parameter}
+\KeywordTok{options}\NormalTok{(}\DataTypeTok{digits=}\DecValTok{4}\NormalTok{)}
+\NormalTok{a=a0}\OperatorTok{+}\NormalTok{n}\OperatorTok{/}\DecValTok{2}\NormalTok{; }
+\KeywordTok{c}\NormalTok{(a,sigma2,b)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 89.5  1.2  2.0
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Inference on sigma2 = 1/lambda }
+
+\NormalTok{sig2priormean=b0}\OperatorTok{/}\NormalTok{(a0}\OperatorTok{-}\DecValTok{1}\NormalTok{)  }\CommentTok{# Prior mean for sigma^2}
+
+\NormalTok{sig2postmean=b}\OperatorTok{/}\NormalTok{(a}\OperatorTok{-}\DecValTok{1}\NormalTok{)}
+
+\NormalTok{### 95% Cred. Int}
+
+\NormalTok{sig2cr=}\DecValTok{1}\OperatorTok{/}\KeywordTok{qgamma}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\FloatTok{0.975}\NormalTok{,}\FloatTok{0.025}\NormalTok{),a,b)}
+
+\KeywordTok{c}\NormalTok{(ybar, mustar, sig2cr)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 26.29884 26.26262  0.01835  0.02781
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{sig2v=}\KeywordTok{seq}\NormalTok{(}\FloatTok{0.01}\NormalTok{,}\DecValTok{10}\NormalTok{,}\FloatTok{0.01}\NormalTok{) }\CommentTok{# HERE }
+\NormalTok{prior=}\KeywordTok{dgamma}\NormalTok{(}\DecValTok{1}\OperatorTok{/}\NormalTok{sigma_squared_star,a0,b0)}\OperatorTok{/}\NormalTok{sigma_squared_star}\OperatorTok{^}\DecValTok{2}
+\NormalTok{post=}\KeywordTok{dgamma}\NormalTok{(}\DecValTok{1}\OperatorTok{/}\NormalTok{sigma_squared_star,a,b)}\OperatorTok{/}\NormalTok{sigma_squared_star}\OperatorTok{^}\DecValTok{2}\NormalTok{;}
+\NormalTok{like=}\KeywordTok{dgamma}\NormalTok{(}\DecValTok{1}\OperatorTok{/}\NormalTok{sigma_squared_star,a}\OperatorTok{-}\NormalTok{a0}\OperatorTok{-}\DecValTok{1}\NormalTok{,b}\OperatorTok{-}\NormalTok{b0}\OperatorTok{+}\DecValTok{0}\NormalTok{)}\OperatorTok{/}\NormalTok{sigma_squared_star}\OperatorTok{^}\DecValTok{2}
+\KeywordTok{plot}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{10}\NormalTok{),}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\FloatTok{1.2}\NormalTok{),}\DataTypeTok{type=}\StringTok{"n"}\NormalTok{,}
+     \DataTypeTok{main=}\StringTok{"Inference on the model variance parameter"}\NormalTok{,}
+     \DataTypeTok{xlab=}\StringTok{"sigma^2 = 1/lambda"}\NormalTok{,}\DataTypeTok{ylab=}\StringTok{"density/likelihood"}\NormalTok{)}
+\KeywordTok{lines}\NormalTok{(sigma_squared_star,prior,}\DataTypeTok{lty=}\DecValTok{3}\NormalTok{,}\DataTypeTok{lwd=}\DecValTok{2}\NormalTok{); }\KeywordTok{lines}\NormalTok{(sigma_squared_star,like,}\DataTypeTok{lty=}\DecValTok{3}\NormalTok{,}\DataTypeTok{lwd=}\DecValTok{2}\NormalTok{)}
+\KeywordTok{lines}\NormalTok{(sigma_squared_star,post,}\DataTypeTok{lty=}\DecValTok{3}\NormalTok{,}\DataTypeTok{lwd=}\DecValTok{2}\NormalTok{)}
+
+\KeywordTok{points}\NormalTok{(sig2cr,}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{),}\DataTypeTok{pch=}\KeywordTok{rep}\NormalTok{(}\DecValTok{16}\NormalTok{,}\DecValTok{2}\NormalTok{),}\DataTypeTok{cex=}\KeywordTok{rep}\NormalTok{(}\FloatTok{1.5}\NormalTok{,}\DecValTok{2}\NormalTok{))}
+\KeywordTok{legend}\NormalTok{(}\FloatTok{1.8}\NormalTok{,}\FloatTok{1.2}\NormalTok{,}
+       \KeywordTok{c}\NormalTok{(}\StringTok{"Prior density"}\NormalTok{,}\StringTok{"Likelihood function (normalised)"}\NormalTok{,}\StringTok{"Posterior density"}\NormalTok{),}
+       \DataTypeTok{lty=}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{),}\DataTypeTok{lwd=}\KeywordTok{c}\NormalTok{(}\DecValTok{2}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{2}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{STT465_HW3_files/figure-latex/unnamed-chunk-13-1.pdf}
+
+
+\end{document}
