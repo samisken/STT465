@@ -2,15 +2,19 @@
 title: "STT465Hw4"
 author: "Sam Isken"
 date: "October 27, 2019"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-STT 465 – Fall 2019
-Homework 4 – Due 10/30/2019 (In Class)
+STT 465 Fall 2019
+Homework 4
+Due 10/30/2019 (In Class)
+
 Instruction:
 When using R in any problem, copy the code and results onto your word document under that question number and add any required comments. You will lose points if I do not see your codes.
 
@@ -82,15 +86,17 @@ coefficients(Model1_Gout)
 LaTeX Code:
 
 ```{LaTeX}
+# Initial Model 
 \text{su}=\beta_0 + \text{sexF}*x_1 + \text{raceW}*x_2 + \text{age} * x_3
+# Filled in Model
 Y = -1.52853 x_1 + -0.78212 x_2 + 0.02674 x_3 +5.84828  
 ```
+
 
 2. Produce a table equal to summary( ) using matrix operations. Your table must include parameter estimate, SE, t-statistic and p-value.
 
 ```{r}
 # Incidence matrix for intercept and effects of Sex, Race, Age,
-## Hisp, Sex, Married, Exp
 X=cbind(1,GOUT$sex,GOUT$race, GOUT$age) 
 X1 <- model.matrix(~sex+race+age,data=GOUT)
 head(X)
@@ -119,7 +125,6 @@ t_stat=bHat2/SE
 pvaluesN=pnorm(abs(t_stat),lower.tail=F)*2
 pvaluesT=pt(abs(t_stat),df=length(y)-ncol(X),lower.tail=F)*2
 
-
 summary(Model1_Gout)
 
 cbind(bHat2,SE,t_stat,pvaluesT)
@@ -127,12 +132,12 @@ cbind(bHat2,SE,t_stat,pvaluesT)
 
 (a) Report your results and comment on any difference between this and results from 1(a)
 
-Should end up being same 
+The table is shown above in the matrix with the only difference being the intercept values. 
 
 (b) Report the code you used to produce the results reported in 2(a)
 
 ```{r}
-#Add all above code when working 
+# Code is shown above. 
 ```
 
 3. Using the estimate effects reported in 1(a) above; produce a plot with age in the x-axis, expected serum urate in the y-axis and lines for male/white, female/white, male/black, female/black. Use a range from 30 to 70 for the x-axis values. Clearly distinguish the different links (Use different colors on different line types). 
@@ -162,31 +167,34 @@ plot(su~age,data =GOUT,
 Int= bHat1[1]+bHat1[3]
 Slope=bHat1[4]
 Age=seq(from=30,to=70,by=1)
-lines(x=Age,y=Int+Age*Slope,col=5)
+lines(x=Age,y=Int+Age*Slope,col="red",lwd=2,lty="dotdash")
 
 # Prediction Equation for Age: Female, White
 Int= bHat1[1]+bHat1[1]+bHat1[2]
 Slope=bHat1[4]
 Age=seq(from=30,to=70,by=1)
-lines(x=Age,y=Int+Age*Slope,col=6)
+lines(x=Age,y=Int+Age*Slope,col="blue",lwd=2,lty="dotted")
 
 # Prediction Equation for Age: Male, Black
 Int= bHat1[1]
 Slope=bHat1[4]
 Age=seq(from=30,to=70,by=1)
-lines(x=Age,y=Int+Age*Slope,col=7)
+lines(x=Age,y=Int+Age*Slope,col="black",lwd=2,lty="solid")
 
 # Prediction Equation for Age: Female, Black 
 Int= bHat1[1]+bHat1[2]
 Slope=bHat1[4]
 Age=seq(from=30,to=70,by=1)
-lines(x=Age,y=Int+Age*Slope,col=8)
-```
+lines(x=Age,y=Int+Age*Slope,col="green",lwd=2,lty="dashed")
 
-Clearly interpret the slope for each line.
+legend(70, 12, legend=c("Male-White", "Female-White","Male-Black","Female-Black"),
+       col=c("red", "blue","black","green"), lty=1:2, cex=0.8)
+
+```
 
 ```{r}
 Slope
 ```
+Clearly interpret the slope for eaach line. 
 
-The slope for all the lines is 0.02673734.
+The slope for all the lines is 0.02673734. What is changing is the intercept values.
