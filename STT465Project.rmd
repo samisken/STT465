@@ -1,0 +1,22 @@
+---
+title: "STT465Project"
+author: "Sam Isken"
+date: "November 6, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(faraway)
+```
+
+```{r}
+gavote <- data(gavote)
+head(gavote)
+help(gavote)
+data(gavote)
+summary(gavote)
+gavote
+```
+
+Gave no guidelines on priors, use flat or non-formative priors s
