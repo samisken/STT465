@@ -2,11 +2,14 @@
 title: "STT465_HW5"
 author: "Sam Isken"
 date: "November 8, 2019"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
-
+Code chunk below reads in nessecary libraries / packages. 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(coda)
 ```
 
 An Example: MLR Analysis in Frequentist and Bayesian
@@ -22,12 +25,33 @@ head(WAGES)
 
 2. Conduct basic descriptive statistical analysis: 
 
-Make comments on descriptive statistics and constrict a scatterplot matrix: 
+Make comments on descriptive statistics and construct a scatterplot matrix: 
 
 ```{r}
 pairs(WAGES)
 summary(WAGES)
+sapply(WAGES, range)
 ```
+
+Notes on variables: 
+-Education: 
+--Years of education range from 6 to 18 years in this data set
+--Mean and median are close, roughly normal 
+
+-South
+--Binary variable indicating location 
+
+-Black/Hispanic
+--Binary variables indicating race 
+
+-Sex
+--Binary variable indicating sex 
+
+Notes on Correlations: 
+-Education is positively correlated with wages 
+-Theres a slight negative correlation between Education and Experience (logical, opportunity cost of education is time that could be spent working)
+
+These are the main conclusions from this scatter. Due to many of the other variables being indicator variables (Binary 0 or 1) it will be easier to look at those in the context of the regression model. 
 
 3.Regress wage on education, race, experience, region, sex and marital status via OLS using lm():
 
@@ -48,15 +72,15 @@ Education, Experience, Region (located in South or not, binary variable 1 or 0) 
 
 b) How much do you expect wage to increase per year of education? 
 
-Given a 1 year increase in education  we estimate wages to increase by .93.
+Given a 1 year increase in education  we estimate hourly wages to increase by  $ .93 (93 cents).
 
 c) What is the average wage difference between male and female in the sample? 
 
-2.33784
+$2.33784, so roughly $2.33. Women earn, on average, $2.33 less than men in this data and model.
 
 d) Is the difference in c) statistically different from 0?
 
-Yes
+Yes, it is very statistically significant since the P-Value is far below .05. 
 
 5. Load the Gibbs Sampler Function in R: 
 
@@ -107,11 +131,111 @@ gibbsMLR=function(y,X,nIter=10000,df0=4,S0=var(y)*0.8*(df0-2),b0=0,varB=1e12,ver
 }
 ```
 
-6. Collect, for the same model specified abovem 15,000 samples. 
+6. Collect, for the same model specified above 15,000 samples. 
 
 Hint: gibbsMLR(y,X,..) takes as inputs a numeric vector with the response (WAGES) and an incidence matrix for effects (sex,race,education,experience,...). lm() creates the incidence  matrix internally. For this you can use X=model.matrix(~a+b+...,date=WAGES) where a,b are the predictors that are included in data. This will create your incidence matrix and then you will use it in gibbsMLR(y,X). 
 
+```{r}
+# Data Pre-Processing and Sampling
+# Set wage to be just the Wage column of data set WAGES 
+wage <- WAGES$Wage
+# Create incidence matrix to use in sampling function
+X <- model.matrix(~Education+Black+Hispanic+Experience+South+Sex+Married,data=WAGES)
+# Pull sample using gibbsMLR(y,X)
+SAMPLES <- gibbsMLR(y=wage,X=X,nIter = 15000)
+```
+
+```{r}
+dim(SAMPLES$effects) #Columns = effects, rows = Samples
+head(SAMPLES$varE)
+```
 
 7. Conduct post-gibbs analysis (trace plot, auto-correlation, decide on burin-in and thinning, provide posterior means, posterior SDs and posterior credibility regions, estimate and report MC errror).
 
+```{r}
+# Trace plot of all variables 
+plot(SAMPLES$varE[1:500],type='o')
+
+# Intercept trace plot
+plot(SAMPLES$effects[1:500,1],type='o')
+
+# The plot below allows us to decide on burn-in quantity, since the data centers around index = 1000 I will burn-n (remove) the first 1000 samples
+plot(SAMPLES$effects[1:5000,2],type='o')
+```
+
+```{r}
+# Discarding Burn - In
+B <- SAMPLES$effects[-(1:1000),];colnames(B)=colnames(X)
+varE <- SAMPLES$varE[-(1:1000)]
+
+summary(B)
+```
+
+Let's now convert B and varE to mcmc objects in order to examine autocorrelation using the coda libray. 
+
+```{r}
+# Convert to a MCMC object 
+B <- as.mcmc(B)
+varE <- as.mcmc(varE)
+```
+
+
+
+```{r}
+autocorr.plot(B[,1],lag.max=100)
+autocorr.plot(B[,2],lag.max=100)
+```
+
+In both instances the autocorrelation approaches 0 as Lag increases to 100. Thus we should sample 1 value every 100 indexes to control for autocorrelation. Thus, we should resample with value 100, 200, .... to n hundred (end of our data set).  This process is called thinning our data. 
+
+Let us now create a HPD interval for our B mcmc object. Since this is an MCMC object I read in an additional formula from the cran GitHub for coda: 
+
+```{r}
+HPDinterval <- function(obj, prob = 0.95, ...) UseMethod("HPDinterval")
+
+HPDinterval.mcmc <- function(obj, prob = 0.95, ...)
+{
+    obj <- as.matrix(obj)
+    vals <- apply(obj, 2, sort)
+    if (!is.matrix(vals)) stop("obj must have nsamp > 1")
+    nsamp <- nrow(vals)
+    npar <- ncol(vals)
+    gap <- max(1, min(nsamp - 1, round(nsamp * prob)))
+    init <- 1:(nsamp - gap)
+    inds <- apply(vals[init + gap, ,drop=FALSE] - vals[init, ,drop=FALSE],
+                  2, which.min)
+    ans <- cbind(vals[cbind(inds, 1:npar)],
+                 vals[cbind(inds + gap, 1:npar)])
+    dimnames(ans) <- list(colnames(obj), c("lower", "upper"))
+    attr(ans, "Probability") <- gap/nsamp
+    ans
+}
+
+HPDinterval.mcmc.list <- function(obj, prob = 0.95, ...)
+    lapply(obj, HPDinterval, prob)
+# source: https://github.com/cran/coda/blob/master/R/HPDinterval.R
+```
+
+```{r}
+print("The below shows the posterior mean and standard deviation")
+summary(B)
+summary(varE)
+print("The below shows the poterior credibility interval")
+HPDinterval.mcmc(B, prob=.95)
+```
+
 8. Test whether there is an ethnic disparity between black and Hispanic workers and report the posterior probability. 
+
+#### Bayesian Linear Hypotheseis ####
+
+
+```{r}
+contrast=c(0,0,0,1,-1,0,0,0)
+tmp=B%*%contrast
+plot(density(tmp));abline(v=0)
+abline(v=HPDinterval.mcmc(as.mcmc(tmp),p=.95),col=2,lty=2)
+print(paste("The ethnic disparity between black and hispanic is > 0", mean(tmp>0)*100)) 
+print(paste("The ethnic disparity between black and hispanic is< 0", mean(tmp<0)*100))
+print("Both in percent of the time")
+```
+
