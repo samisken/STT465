@@ -1,0 +1,75 @@
+---
+title: "STT465_Hw6"
+author: "Sam Isken"
+date: "November 24, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+```
+
+STT 465 – Fall 2019
+
+Homework 6 – Due 12/04/2019 (In Class)
+Instruction:
+When using R in any problem, copy the code and results onto your word document under that question number and add any required comments. You will lose points if I do not see your codes. You should present a stapled document when multiple pages are used. The grader will not be held responsible for any loss of pages.
+
+Logistic Regression
+(1) Maximum Likelihood Estimation(Frequentist) Analysis
+
+Using the titanic data set (in D2L) fit a logistic regression with survived as response, sex, class and age as predictors using glm. Note: sex and class are factors, while age is a continuous predictor. Note: Some entries have missing values. Be sure to remove all the rows of the data set that contain missing values @ sex, class, age or survived. Hint: you can find missing values using is.na(DATA$survivied) or non-missing using !is.na(DATA$survived).
+
+# Ask questions and finish data cleaning
+
+```{r}
+titanic <- read.csv("titanic.csv",header=TRUE)
+titanic_limit <- titanic %>% select(survived,sex,pclass, age)
+titanic_rm_na <- na.omit(titanic_limit)
+head(titanic_rm_na)
+```
+
+```{r}
+titanic.logit <- glm(survived ~ sex+pclass+age, data = titanic_rm_na, family = "binomial")
+```
+
+
+a. Report parameter estimates, SEs and p-values
+
+```{r}
+summary(titanic.logit)
+```
+
+b. Summarize your findings
+
+-Given someone was male they were 2.4% less likely to live. 
+-With each unit increase in pclass (which denotes a reduction in class) someone was 1.13% less likely to live
+-With a 1 unit increase in age someone became .03% less likely to live
+
+c. Report estimated probabilities for male and female in each class set age to be :
+
+(i) 35
+
+(ii) 55
+
+Compare the two age groups by sex.
+
+(2) Bayesian Analysis
+
+Use the Metropolis sampler developed in class logisticRegressionBayes to fit the logistic regression. Collect 55,000 samples, discard the frist 5,000 for burn in. Note: to avoid confusion when comparing results from the Bayesian and ML analysis, do
+not center the predictors.
+
+# Next Week
+
+a. Report parameter estimates, posterior standard deviation and 95% posterior credibility regions for each of the regression coefficients.
+
+b. Report, for each coefficient, the trace plot and estimates of the number of effective samples and the MC standard error.
+
+c. Use the samples collected to estimate the posterior distribution of the survival probability for male and female in each of the classes (set age to be 35). For each of the groups report a histogram of the posterior density of the survival probability with vertical read lines indicating 95% posterior credibility regions.
+
+(3) The function logisticRegressionBayes implements a Metropolis algorithm. With candidates generated from normal distribution with mean equal to the current sample and variance V. Small values of lambda lead to high rates of acceptance but high correlation between samples. Fit the logistic regression of question 2 using V=.5, V=.1,V=.001,V=.0001, and V=.00005.
+
+(a) Report the average acceptance rate and the lag-50 correlation and effective number of samples for the effect of age.
+
+(b) What value of V would you recommend? Why?
