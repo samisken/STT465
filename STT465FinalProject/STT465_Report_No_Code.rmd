@@ -1,0 +1,784 @@
+---
+title: "STT465_Report_No_Code"
+author: "Sam Isken"
+date: "December 9, 2019"
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+---
+
+# STT 465 Final Report: 
+# Examining a PRIOR Election: A Look into 2000 Elections Using OLS and Bayesian Techniques 
+
+This PDF contains the written report (no code visible). The other RMarkDown below contains the code as well as parts of the essay portions of this project (ones that are relevant to the coding scheme). I have also included a supplemental dataset I used to examine the election results at the county level of granularity. 
+
+```{r setup, include=FALSE,echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r setup2, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(faraway)
+library(ggplot2)
+library(coda)
+library(rjags)
+library(ggplot2)
+library(corrplot)
+```
+
+```{r Read in gavote data, echo=FALSE}
+data("gavote")
+gavote$undercount<- (gavote$ballots - gavote$votes)/gavote$ballots
+```
+
+
+# Introduction 
+
+The 2000 United States Presidential Election was bound to be contentious. George W. Bush, a conservative with a family legacy in the political sphere was running against incumbent Vice President (to Moderate Democrat Bill Clinton) Al Gore. Both ran campaigns focused on domestic issues with some topics of foreign policy sprinkled in. The conservatives emphasized "family values" after Clinton's scandal regarding Monica Lewinsky while Gore criticized Bush's lack of political experience and conservative policy regarding Healthcare. 
+
+After election night it was clear this election would not go as smoothly as planned. The biggest story to come out was that of the "hanging chad" which made voters in Florida unsure of for whom they were casting their ballot and lead to the famous Florida recount (which was interrupted when a conservative group stormed the recount offices, led by recently convicted felon Roger Stone). This led to a general skepticism on the part of the American people about the security and fairness of the election results. This was eventually decided in the SCOTUS, which handed the election to Bush.
+
+This paper will focus on another election night controversy, the state of Georgia. We are looking to examine the undercount of votes granularly at the county level. The undercount is defined as the difference between the number of ballots cast and votes recorded for president. Voters may have chosen not to vote for president, voted for more than one candidate (disqualified) or the equipment may have failed to register their choice. (Citation: "```{r} help(gavote) ```"). Our goal, is to determine the factors that significantly predict the undercount at the county level, which in turn could be used to make inferences for future elections. Our data contains the following variables to assist with this prediction: 
+
+## Data Summary
+
+equip: The voting equipment used: LEVER, OS-CC (optical, central count), OS-PC (optical, precinct count) PAPER, PUNCH
+
+econ: economic status of county: middle poor rich
+
+perAA: percent of African Americans in county
+
+rural: indicator of whether county is rural or urban
+
+atlanta: indicator of whether county is in Atlanta or not: notAtlanta
+
+gore: number of votes for Gore
+
+bush: number of votes for Bush
+
+other: number of votes for other candidates
+
+votes: number of votes
+
+ballots: number of ballots
+
+undercount: (number of ballots - number of votes) / (number of ballots)
+
+(Citation: Meyer M. (2002) Uncounted Votes: Does Voting Equipment Matter? Chance, 15(4), 33-38 & "```{r} help(gavote) ```")
+
+## Surface Level Data Analysis
+
+```{r Surface Level EDA, echo=FALSE}
+print(paste("The range of the undercount (in percent of county votes) is:",range(gavote$undercount)[1]," , ",range(gavote$undercount)[2]))
+print(paste("The mean of undercount (in percent of county votes) is:",mean(gavote$undercount)))
+
+upper <- max(gavote$undercount)
+
+print(paste("The max value of undercount (in percent of county of county votes) is: " , upper))
+```
+
+From a surface level analysis we can see that in some counties, up to 18% of ballots were thrown out in some counties due to voting or machine errors. The average percent of votes thrown out by county was 4%. This quick look proves that this is an important topic as this easily could have swung counties in favor of the other candidate (either Gore or Bush). This provides justification for our research.
+
+```{r Load GA County Level Data, echo=FALSE}
+Georgia_County_Level_Results <- read.csv("Georgia_County_Level_Results.csv")
+Georgia_County_Level_Results[] <- lapply(Georgia_County_Level_Results, as.numeric)
+Georgia_County_Level_Results$Percent_Dif <- Georgia_County_Level_Results$Bush_Percent - Georgia_County_Level_Results$Gore_Percent
+Georgia_County_Level_Results$within_margin_of_undercount <- ifelse(Georgia_County_Level_Results$Percent_Dif<=upper,1,0)
+percent_counties_within_undercount_margin <- sum(Georgia_County_Level_Results$within_margin_of_undercount)/nrow(Georgia_County_Level_Results)
+head(Georgia_County_Level_Results)
+```
+
+The data set above provides the election results at the county level for Georgia. This will assist in providing a basis / set of background knowledge for our project.
+
+```{r Georgia Election Undercount Visualization, echo=FALSE}
+# Visualizations
+ggplot(Georgia_County_Level_Results, aes(x=Percent_Dif)) + geom_histogram(bins=45,color="blue", fill="red") + geom_vline(aes(xintercept=mean(Percent_Dif)),color="blue", linetype="dashed", size=1)+
+  labs(title="Distribution of Undercount (Percent of County Vote)",x="Percent of County Vote", y = "Count")
+print(paste(percent_counties_within_undercount_margin,"were within margin of error max (18%)"))
+```
+
+As we can see roughly 45% of county results were within the margin of the undercount (18%). This, coupled with the fact that Bush only won by a relatively narrow margin (54.67% to 42.98%) prompts the analysis of this data. 
+
+(Citation: https://en.wikipedia.org/wiki/2000_United_States_presidential_election_in_Georgia)
+
+This concludes the argument in favor (justification) of conducting this study. We will now discuss the final models and methods used to create the models (OLS and Bayesian) present in this paper. 
+
+# Final Models
+
+## OLS Frequentist Regression
+
+$$ \text{Final Model (OLS Frequentist Regression): } $$ 
+
+$$ \text{UNDERCOUNT} = 5.807496*10^{-3}x_1 + 2.273752*10^{-2}x_2 - 9.044148*10^{-3}x_3 + 6.082960*10^{-3}x_4 + 2.089696 * 10^{-2}x_5   -1.894076*10^{-2}x_6 \\ - 3.554025*10^{-5}x_7 -3.386005*10^{-5}x_8 + 3.282120 *10^{-5}x_9 + 2.898298*10^{-2} + \epsilon_i   $$ 
+
+$$ \text{UNDERCOUNT} = \beta_1 + \text{EQUIP}x_1 + \text{ECON}x_2 + \text{GORE}x_3 + \text{BUSH}x_4 + \text{BALLOTS}x_5 + \epsilon_i$$ 
+The above functions show both the specific numerical coefficients within our regression function as well as the generic variables they represent.
+
+## Bayesian Analysis
+
+Within a Bayesian Analysis (applied using a Normal Model) our result is our prior, posteriors and likelihood function: 
+
+$$ \text{Final Model (Bayesian Approach): } $$ 
+
+Likelihood function:
+
+$$ \text{Likelihood Function of Undercount (Y):} \\ p\left(\text{UNDERCOUNT (Y)} | \text{EQUIP,ECON,GORE,BUSH,BALLOTS}\right)=\prod_{i=1}^{n} \frac{1}{\sqrt{2 \pi \sigma^{2}}} \exp \left\{-\frac{1}{2 \sigma^{2}}\left( \text{UNDERCOUNT}_{i}-\beta_{1}-\text{EQUIP}_{2} x_{i} - \text{ECON}_3x_i - \text{GORE}_4x_i \\ -\text{BUSH}_5x_i - \text{BALLOTS}_6 x_i \right)^{2}\right\}  $$ 
+
+Prior: 
+
+$$ \text{Flat Prior:} \\ p(\beta_1 , ... , \beta_p) \propto 1 $$
+
+Posterior Distributions:
+
+$$ \text{Posterior Distribution of Regression Coefficients:} \\ p\left( \text{EQUIP,ECON,GORE,BUSH,BALLOTS} | \text{UNDERCOUNT (Y)}   \right) \propto 1 \times \prod_{i=1}^{n} \frac{1}{\sqrt{2 \pi \sigma^{2}}} \exp \left\{-\frac{1}{2 \sigma^{2}}\left(\text{UNDERCOUNT}_{i}-\beta_{1}-\text{EQUIP}_{2} x_{i} - \text{ECON}_3x_i - \text{GORE}_4x_i \\ -\text{BUSH}_5x_i - \text{BALLOTS}_6 x_i \right)^{2}\right\} $$
+
+$$ \text{In the generic formed a posterior is defined in the form of:}\\ p(\theta | y) \propto p(\theta) * p(y | \theta)$$ 
+
+These results will be further explained in both the Methods and Conclusion sections.
+
+
+```{r, echo=FALSE}
+# Data Cleaning
+
+# Check for na values
+gavote <- na.omit(gavote)
+
+#Re-Encode rural and Atlanta
+# rural
+unique(gavote$rural)
+gavote$rural <- ifelse(gavote$rural == 'rural',1,0)
+
+# Atlanta
+unique(gavote$atlanta)
+gavote$atlanta <- ifelse(gavote$atlanta == 'Atlanta',1,0)
+```
+
+
+# Methods 
+
+We will be using two methods to examine this data. We will first use a basic Frequentist OLS regression model (lm() in R) along with forward-stepwise variable selections. This will allow us to perform regression diagnostics and make inferences on characteristics that could make counties prone to undercount. 
+
+We will then fit a Normal Bayesian model. Here, we will discuss our likelihood function, priors and posterior distributions. Since we do not have any information on priors we will use flat or non-informative priors. 
+
+## Exploratory Data Analysis 
+
+Let us now apply a more rigorous method to attempt to examine the factors that can predict the occurrence of undercount at the county level. Let us begin our exploratory analysis by examining a few rows of data:
+
+```{r Head of GAVOTE,echo=FALSE}
+head(gavote)
+```
+
+Let us now look for any correlations between our variables. 
+
+```{r Correlation Matrix,echo=FALSE}
+pairs(gavote)
+```
+
+```{r Data Cleaning,echo=FALSE,results='hide'}
+# Data Cleaning
+
+# Check for na values
+gavote <- na.omit(gavote)
+
+#Re-Encode rural and Atlanta
+# rural
+unique(gavote$rural)
+gavote$rural <- ifelse(gavote$rural == 'rural',1,0)
+
+# Atlanta
+unique(gavote$atlanta)
+gavote$atlanta <- ifelse(gavote$atlanta == 'Atlanta',1,0)
+```
+
+We can see that: 
+
+1. Undercount is negatively correlated with the level of equipment. 
+2. Ballots and Votes are essentially co-linear.
+
+Now let us examine our dependent variable. We want to see how undercount is distributed vs. a normal distribution. 
+
+```{r Distribution of Dependant,echo=FALSE}
+ggplot(gavote, aes(x=undercount)) + geom_histogram(bins=45) + stat_function(fun = dnorm, args = list(mean = mean(gavote$undercount), sd=sd(gavote$undercount)))
+```
+
+In order to make inference and run nessecary analysis (confidence intervals etc.) prior to our Bayesian analysis we will want our dependent variable to be normally distributed. This is close enough (based on the histogram above). Our dependant variable is roughly normal with a few right side outliers.
+
+
+```{r Shapiro Wilk Test,echo=FALSE}
+shapiro.test(gavote$undercount)
+```
+
+Though our sample does not pass the Shapiro-Wilk test this is acceptable as we can see from our histogram that it is roughly normally distributed with some right side outliers. The Shapiro-Wilk test often fails as N becomes large (in contrast to many other statistical tests). Normally, I may remove some of the outliers and re-run this analysis but due to our small data I am only going to remove outliers within the regression diagnostics (when they are shown to be high leverage points).
+
+```{r Distribution of Categorical Variables,echo=FALSE}
+# Distribution of Categorical Variables 
+g <- ggplot(gavote, aes(econ))
+g + geom_bar(aes(fill=econ), width = 0.5) + 
+  theme(axis.text.x = element_text(angle=65, vjust=0.6)) + 
+  labs(title="Histogram on Economic Status of Georgia Counties", 
+       subtitle="gavote") 
+
+q <- ggplot(gavote, aes(equip))
+q + geom_bar(aes(fill=equip), width = 0.5) + 
+  theme(axis.text.x = element_text(angle=65, vjust=0.6)) + 
+  labs(title="Histogram on Voting Equipment used by Georgia Counties", 
+       subtitle="gavote")
+
+# Histogram on a Categorical variable
+r <- ggplot(gavote, aes(econ))
+r + geom_bar(aes(fill=equip), width = 0.5) + 
+  theme(axis.text.x = element_text(angle=65, vjust=0.6)) + 
+  labs(title="Histogram Showing Relationship Between Economic Status and Voting Equipment", 
+       subtitle="Voting Equipment Across Economic Status") 
+```
+
+From these plots we can see that most counties in Georgia are poor and do not use the most reliable form of voting (paper). It will be interesting to examine whether or not either of these categorical variables end up being significant in a model. I would hypothesize, that they would be (due to knowledge of politics and the history of voting) but they could be statistically insignificant in predicting undercount.  We can also see that there is a large increase in the use if lever machines for voting as economic status decreases. This, if lever is found to be an unreliable form of voting, could be used to make inference about which counties have the least accurate voting counts. 
+
+Let us now move onto building our models, both within the OLS and Bayesian Frameworks.
+
+## Model Building 
+
+### Frequentist OLS Regression Model, Variable Selection and Diagnotics
+
+Now, fit appropriate models for undercount as response variable with all possible predictors in the dataset as described in the "Final Project Instruction" document. 
+
+We can begin the Stepwise Variable Selection by first fitting a model including all of the variables. 
+
+```{r Stepwise Variable Selection, echo=FALSE}
+stepwise_lm_1 <- lm(undercount~equip+econ+perAA+rural+atlanta+gore+bush+other+votes+ballots,data=gavote)
+summary(stepwise_lm_1)
+```
+
+As we can see not nearly all of our predictors are significant. Now, let us remove insignificant variables (Performing Stepwise Variable Reduction) resulting in the following model:
+
+```{r Stepwise Variable Selection Model 2, echo=FALSE}
+stepwise_lm_2 <- lm(undercount~equip+econ+gore+bush+ballots,data=gavote)
+summary(stepwise_lm_2)
+par(mfrow=c(2,2))
+plot(stepwise_lm_2)
+abline(stepwise_lm_2)
+```
+
+We can now perform Regression Diagnostics. First, we can decide on outliers. I am going to use a standard Rule of Thumb: I am going to only remove outliers that have a very high leverage (greater than Cooks Distance). I attempted to remove more and it caused many errors within the model due to the act of decreasing the dimensions of already small data. I will remove FULTON.
+
+```{r Removing High Leverage Outlier, echo=FALSE}
+# Remove Fulton
+remove <- c("FULTON")
+gavote <- gavote[!(row.names(gavote) %in% remove), ]
+```
+
+We can now recreate the same model:
+
+```{r Regression Model Run,  echo=FALSE}
+stepwise_lm_2 <- lm(undercount~equip+econ+gore+bush+ballots,data=gavote)
+summary(stepwise_lm_2)
+par(mfrow=c(2,2))
+plot(stepwise_lm_2)
+```
+
+Now we can perform regression diagnostics. 
+
+1. Residuals vs. Fitted
+-Our relationship (even after removing FULTON) is not very linear
+-This is shown by the curved line
+-This lowers our confidence in this relationship being of the linear classification 
+
+2. Normal Q-Q
+-Our residuals are roughly normally distributed with a few outliers 
+-This is a positive sign in linearity for our model
+
+3. Scale-Location
+-Our data is very heteroskedastic (difference in variance across the residuals)
+-This means our variance is very inconsistent across our data
+
+4. Residuals vs. Leverage
+-Few points (after FULTON removal) lie outside of Cook's Distance
+
+Overall, the predictors in this model are statistically significant. However, many of our regression diagnostics do not pass so the linearity of this relationship is in question. This is expected, as many situations within the social sciences (in which politics is included) are not very linear in their relationship.
+
+```{r Regression Coefficients,echo=FALSE}
+## Prediction equation coefficient
+bHat <- coef(stepwise_lm_2)
+bHat
+```
+
+Thus our regression equation is: 
+
+$$ \text{UNDERCOUNT} = 5.807496*10^{-3}x_1 + 2.273752*10^{-2}x_2 - 9.044148*10^{-3}x_3 + 6.082960*10^{-3}x_4 + 2.089696 * 10^{-2}x_5   -1.894076*10^{-2}x_6 \\ - 3.554025*10^{-5}x_7 -3.386005*10^{-5}x_8 + 3.282120 *10^{-5}x_9 + 2.898298*10^{-2} + \epsilon_i   $$ 
+
+$$ \text{UNDERCOUNT} = \beta_1 + \text{EQUIP}x_1 + \text{ECON}x_2 + \text{GORE}x_3 + \text{BUSH}x_4 + \text{BALLOTS}x_5 + \epsilon_i$$ 
+
+The correlation between only our significant variables is: 
+
+```{r, echo=FALSE}
+# OLS fit (MLR) Scatterplot Comparison
+pairs(gavote) # Scatterplot matrix for ALL variables
+# Correlation Matrix for Model  with Stepwise Variable Reduction Performed 
+gavote1 <- gavote[-c(3,4,5,8,9)]
+pairs(gavote1)
+```
+
+We can see that undercount is correlated with the class 'poor' in econ but, suprisingly, not clearly correlated with any single type of election equipment.
+
+Now let us create specific prediction probabilities to  model likely scenarios. This code chunk is shown so the reader can cleary see how we developed these predictions.   
+
+```{r}
+## Prediction equations
+bHat1=coef(stepwise_lm_2)
+bHat1
+
+# Prediction Equation for: a poor county, with 3000 votes for Gore, 2000 votes for Bush, lever voting (0 for all) and 5500 ballots
+y1=0+2.898298e-02+2.089696e-02+(3000*-3.554025e-05) +(2000*-3.386005e-05)+(5500*3.282120e-05)
+print(paste("There is a predicted value",y1*100,"% of votes to be undercounted by in this county"))
+
+# Prediction Equation for: a poor county, with 2000 votes for Gore, 3000 votes for Bush, lever voting (0 for all) and 5500 ballots
+y2=0+2.898298e-02+2.089696e-02+(2000*-3.554025e-05) +(3000*-3.386005e-05)+(5500*3.282120e-05)
+print(paste("There is a predicted value",y2*100,"% of votes to be undercounted by in this county"))
+
+# Prediction Equation for: a RICH county, with 2000 votes for Gore, 3000 votes for Bush, lever voting (0 for all) and 5500 ballots
+y3=0+2.898298e-02+-1.894076e-02+(3000*-3.554025e-05) +(2000*-3.386005e-05)+(5500*3.282120e-05)
+print(paste("There is a predicted value",y3*100,"% of votes to be undercounted by in this county"))
+```
+
+We can now see, for example, that the predicted percent of votes to be undercounted drops significantly in rich vs. poor economic status counties when other variables are held fixed. There does not appear to be a drastic change in undercount when the winning candidate is changed.
+
+Overall, the linear model worked relatively well. We were able to isolate a decent number of significant predictors and can run various inputs to predict the demographics of counties that will experience undercount in other elections.
+
+### Normal Bayesian Model 
+
+We will now create our normal Bayesian Model.
+
+First we can examine our Frequentist Model:
+
+```{r,echo=FALSE}
+########  OLS fit (Frequentist Inference)
+summary(stepwise_lm_2)
+## Coefficients of Prediction equations
+bHat= coef(stepwise_lm_2)
+bHat
+```
+
+I then initialized various functions and packages in order to prep the data to be used to create a Bayesian Normal Model.
+
+Now we can initialize the gibbsMLR function in order to implement a Bayesian ML Regression.  
+
+```{r gibbsMLR Function}
+### Gibbs sampler for a Muliple Linear Regression Model (MLR) ###
+####### Bayesian Inference ###########
+##  y (nx1) response  ###
+### X (nxp) the covariate matrix for effects  ###
+### nIter, the number of samples to be collected, set by default to 10,000.
+##  Hyper-parameters: df0 and S0 (the scale and degree of freedom for the scaled-inverse chi-square prior)
+##                  : b0 and varB (the mean and variance of the normal prior assigned to effects).
+
+
+gibbsMLR=function(y,X,nIter=10000,df0=4,S0=var(y)*0.8*(df0-2),b0=0,varB=1e12,verbose=500){
+  
+  ## Objects to store samples
+  p=ncol(X); n=nrow(X)
+  B=matrix(nrow=nIter,ncol=p,0) # create a matrix to store the gibbs sample for beta
+  varE=rep(NA,nIter)      # .. for error variance
+  
+  ## Initialize
+  B[1,]=0     # initial values for slopes
+  B[1,1]=mean(y)  # initial value for y-intercept
+  b=B[1,]
+  varE[1]=var(y)  # initial error variance
+  resid=y-B[1,1]  # centered y (orthogonal)
+  
+  ## Computing sum x'x for each column
+  SSx=colSums(X^2)
+  
+  for(i in 2:nIter){
+    # Sampling regression coefficients
+    for(j in 1:p){
+      A=SSx[j]/varE[i-1]+1/varB
+      Xy= sum(X[,j]*resid)+SSx[j]*b[j]  # equivalent to X[,j]'(y-X[,-j]%*%b[-j])
+      rhs=Xy/varE[i-1]  + b0/varB  # Numerator of beta^tilda_k
+      condMean=rhs/A
+      condVar=1/A
+      b_old=b[j]
+      b[j]=rnorm(n=1,mean=condMean,sd=sqrt(condVar))
+      B[i,j]=b[j]  
+      resid=resid-X[,j]*(b[j]-b_old) # updating residuals
+    }
+    # Sampling the error variance  
+    RSS=sum(resid^2)
+    DF=n+df0
+    S=RSS+S0
+    varE[i]=S/rchisq(df=DF,n=1)
+    
+    ## if(i%%verbose==0){ cat(' Iter ', i, '\n') }
+  }
+  
+  out=list(effects=B,varE=varE)
+  return(out)
+}
+```
+
+
+Before running this let us discuss what a Bayesian MLR is truly doing (behind the scenes of this function). Our goal is predict the undercount at the county level. To do this we have been using a MLR. From a Bayesian perspective, our goal is to get a posterior distribution of the possible model parameters based on the data and prior knowledge (from either a field expert or educated guess). 
+
+Our MLR Model can be written as: 
+
+$$ y_{i}=\sum_{j=1}^{p} x_{i j} \beta_{j}+\varepsilon_{i} $$
+
+for 
+
+$$ i = 1, ... , \text{n} $$
+
+This can be expressed in matrix form as: 
+
+$$ \left(\begin{array}{c}{y_{1}} \\ {\cdot} \\ {\cdot} \\ {y_{n}}\end{array}\right)=\left(\begin{array}{ccc}{x_{11}} & {\cdots} & {x_{1 p}} \\ {\vdots} & {\ddots} & {\vdots} \\ {x_{n 1}} & {\cdots} & {x_{n p}}\end{array}\right)\left(\begin{array}{c}{\beta_{1}} \\ {\cdot} \\ {\cdot} \\ {\beta_{p}}\end{array}\right)+\left(\begin{array}{c}{\varepsilon_{1}} \\ {\cdot} \\ {\cdot} \\ {\varepsilon_{n}}\end{array}\right) $$ 
+which can also be written as: 
+
+$$ \boldsymbol{y}=\boldsymbol{\beta}^{T} \boldsymbol{X}+\boldsymbol{\varepsilon} $$
+
+where 
+
+$$ _{\beta}{T}=\left(\beta_{1} \cdots \beta_{p}\right)$$ 
+
+is the transpose of the vector.
+
+$$ \boldsymbol{\beta}=\left(\beta_{1} \cdots \beta_{p}\right)^{T} $$ 
+
+The goal of OLS is to minimize: 
+
+$$ S(\beta)=(\boldsymbol{y}-\boldsymbol{X} \boldsymbol{\beta})^{T}(\boldsymbol{y}-\boldsymbol{X} \boldsymbol{\beta}) $$ 
+
+From all of this we can obtain the following estimate that: 
+
+$$ \hat{\beta_{O L S}}=\left(X^{T} X\right)^{-1}\left(X^{T} y\right) $$ 
+
+All of this, comes with the normal assumption that 
+
+$$ \varepsilon_{1}, \ldots, \varepsilon_{n} \sim N\left(0, \sigma^{2}\right) $$
+
+This can also be expressed in matrix form: 
+
+$$ \varepsilon \sim \text {Multivariate} N\left(\mathbf{0}_{n \times \mathbf{1}}, \sigma_{{\epsilon}}^{2} \boldsymbol{I}_{n\times n}\right) $$
+
+which implies: 
+
+$$ \left\{y | X, \beta, \sigma^{2}\right\} \sim \text { Multivariate } N\left(X \beta, \sigma^{2} I\right) $$ 
+
+
+
+The posterior distribution (our beliefs after viewing data) can be defined as: 
+
+$$p(\theta | y) \propto p(\theta) * p(y | \theta)$$ 
+
+(y = response data)
+
+Within our model, since we do not have any expert opinion on priors, we are assuming a uniform/flat prior. This means: 
+
+$$ p(\beta_1 , ... , \beta_p) \propto 1 $$
+
+We assume our data comes from a normal population thus: 
+
+$$ \epsilon_i \text{~} N(0,\sigma^2) $$
+
+and thus: 
+
+$$ y_i \text{~} N(\beta_1 + \beta_2 x_i + ... +\beta_n x_i) $$
+From this we can show that our likelihood function is: 
+
+$$ p\left(y_{1}, \ldots, y_{n} | \beta_{1},..., \beta_{p}\right)=\prod_{i=1}^{n} \frac{1}{\sqrt{2 \pi \sigma^{2}}} \exp \left\{-\frac{1}{2 \sigma^{2}}\left(y_{i}-\beta_{1}-\beta_{2} x_{i} - ... - \beta_p x_i \right)^{2}\right\}  $$ 
+
+This can be derived and written in matrix form as:
+
+$$ \begin{aligned} p\left(y_{1}, y_{2}, \ldots, y_{n} | \boldsymbol{\beta}, \sigma_{\varepsilon}^{2}\right)=p\left(y_{1} | \boldsymbol{\beta}, \sigma_{\varepsilon}^{2}\right) \times \cdots \times p\left(y_{n} | \boldsymbol{\beta}, \sigma_{\varepsilon}^{2}\right) \\=\prod_{i=1}^{n}\left(2 \pi \sigma_{\varepsilon}^{2}\right)^{-\frac{1}{2}} \mathrm{e}^{-\frac{\left(y_{i}-\sum_{j=1}^{p} x_{i j} \beta_{j}\right)}{2 \sigma_{\varepsilon}^{2}}} \\=\left(2 \pi \sigma_{\varepsilon}^{2}\right)^{-\frac{n}{2}} \mathrm{e}^{-\frac{1}{2 \sigma_{\varepsilon}^{2}} \sum_{i=1}^{n}\left(y_{i}-\sum_{j=1}^{p} x_{i j} \beta_{j}\right)^{2}} \\=\left(2 \pi \sigma_{\varepsilon}^{2}\right)^{-\frac{n}{2}} e^{-\frac{1}{2 \sigma_{\varepsilon}^{2}}(\boldsymbol{y}-\boldsymbol{X} \boldsymbol{\beta})^{T}(\boldsymbol{y}-\boldsymbol{X} \boldsymbol{\beta})} \end{aligned} $$
+
+From this we can see that: 
+
+$$ \text{RSS}(y,X,\beta) = (\boldsymbol{y}-\boldsymbol{X} \boldsymbol{\beta})^{T}(\boldsymbol{y}-\boldsymbol{X} \boldsymbol{\beta})  $$
+
+We can then derive the Maximum Likelihood Estimates (MLE) for $(\beta,\sigma^2_\epsilon)$ by minimizing the negative log-likelihood: 
+
+$$ \left\{\boldsymbol{\beta}, \sigma_{\varepsilon}^{2}\right\} \stackrel{\mathrm{m}}{=} \frac{n}{2} \log \left(\sigma_{\varepsilon}^{2}\right)+\frac{1}{2 \sigma_{\varepsilon}^{2}} R S S(\boldsymbol{y}, \boldsymbol{X}, \boldsymbol{\beta}) $$ 
+
+Which shows: 
+
+$$ M L E(\boldsymbol{\beta})=\widehat{\boldsymbol{\beta}}_{O L S} \quad \\ M L E\left(\sigma_{\varepsilon}^{2}\right)=\widehat{\sigma_{\varepsilon}^{2}}=\frac{R S S\left(y, X, \widehat{\beta}_{O L S}\right)}{\mathrm{n}} $$
+and that 
+
+$$ \left\{\boldsymbol{\beta}, \sigma_{\varepsilon}^{2}\right\} \stackrel{\mathrm{m}}{=} \frac{n}{2} \log \left(\sigma_{\varepsilon}^{2}\right)+\frac{1}{2 \sigma_{\varepsilon}^{2}} R S S(\boldsymbol{y}, \boldsymbol{X}, \boldsymbol{\beta}) $$
+
+Commonly people use IID normal priors for $\beta$, but, since we have no prior knowledge we will be using  uninformed / flat priors. 
+
+From this we can draw the conclusion that, assuming a flat prior as mentioned above, our resulting posterior will be: 
+
+$$ p\left(\beta_{1},..., \beta_{n} | y_{1}, \ldots, y_{n}\right) \propto 1 \times \prod_{i=1}^{n} \frac{1}{\sqrt{2 \pi \sigma^{2}}} \exp \left\{-\frac{1}{2 \sigma^{2}}\left(y_{i}-\beta_{1}-\beta_{2} x_{i} - ... - \beta_p x_i \right)^{2}\right\} $$
+which: 
+
+$$ e^{-\frac{1}{2 \sigma^{2}} \sum\left(y_{i}-\beta-\beta x_{i} - ... - \beta_p x_i\right)^{2}}  $$
+
+Specifically, for our regression function our: 
+
+Likelihood function:
+
+$$ \text{Likelihood Function of Undercount (Y):} \\ p\left(\text{UNDERCOUNT (Y)} | \text{EQUIP,ECON,GORE,BUSH,BALLOTS}\right)=\prod_{i=1}^{n} \frac{1}{\sqrt{2 \pi \sigma^{2}}} \exp \left\{-\frac{1}{2 \sigma^{2}}\left( \text{UNDERCOUNT}_{i}-\beta_{1}-\text{EQUIP}_{2} x_{i} - \text{ECON}_3x_i - \text{GORE}_4x_i \\ -\text{BUSH}_5x_i - \text{BALLOTS}_6 x_i \right)^{2}\right\}  $$ 
+
+Prior: 
+
+$$ \text{Flat Prior:} \\ p(\beta_1 , ... , \beta_p) \propto 1 $$
+
+Posterior Distributions:
+
+$$ \text{Posterior Distribution of Regression Coefficients:} \\ p\left( \text{EQUIP,ECON,GORE,BUSH,BALLOTS} | \text{UNDERCOUNT (Y)}   \right) \propto 1 \times \prod_{i=1}^{n} \frac{1}{\sqrt{2 \pi \sigma^{2}}} \exp \left\{-\frac{1}{2 \sigma^{2}}\left(\text{UNDERCOUNT}_{i}-\beta_{1}-\text{EQUIP}_{2} x_{i} - \text{ECON}_3x_i - \text{GORE}_4x_i \\ -\text{BUSH}_5x_i - \text{BALLOTS}_6 x_i \right)^{2}\right\} $$
+
+$$ \text{In the generic formed a posterior is defined in the form of:}\\ p(\theta | y) \propto p(\theta) * p(y | \theta)$$ 
+
+
+We can now move on to working with the data from a Bayesian perspective using R.
+
+Now we can encode variables used in Bayesian MLR function:
+
+```{r Bayesian MLR Variable Creation}
+undercount=gavote$undercount
+X=model.matrix(~.,data=gavote1)
+SAMPLES=gibbsMLR(y=undercount,X=X,nIter=15000)  
+#dim(SAMPLES$effects)# cols are effects, rows are samples
+#head(SAMPLES$varE)
+```
+
+The GibbsMLR function is now run and we have created 15,000 samples using this function.
+
+We can now conduct post-gibbs analysis (trace plot, auto-correlation, decide on burn-in and thinning, provide posterior means, posterior SDs and posterior credibility regions, estimate and report MC error).
+
+```{r}
+# trace plots of a few parameters....
+
+# Trace plot of all variables 
+plot(SAMPLES$varE[1:500],type='o') 
+print("1st 10 interations should be discared as burn in")
+
+# Intercept trace plot
+plot(SAMPLES$effects[1:500,1],type='o') 
+print("Intercept, first 50 need to be discarded")
+
+# The plot above allows us to decide on burn-in quantity, since the data centers around index = 500 I will burn-n (remove) the first 500 samples
+plot(SAMPLES$effects[1:5000,2],type='o') # effect of coefficients Discard 500
+print("The plot above allows us to decide on burn-in quantity, since the data centers around index = 500 I will burn-n (remove) the first 500 samples")
+
+## Discarding 500 iterations as burn-in
+B=SAMPLES$effects[-(1:500),];colnames(B)=colnames(X)
+varE=SAMPLES$varE[-(1:500)]
+
+# Discarding Burn - In Summary
+summary(B)
+```
+
+Let’s now convert B and varE to mcmc objects in order to examine autocorrelation using the coda library. This will allow us to run more analysis. 
+
+```{r}
+# Converting to MCMC object 
+B=as.mcmc(B)
+varE=as.mcmc(varE)
+```
+
+Now that B and varE are mcmc objects we can create autocorrelation plots.
+
+```{r}
+par(mfrow=c(1,2))
+autocorr.plot(B[,1],lag.max=100)
+autocorr.plot(B[,2],lag.max=100)
+```
+
+In both instances the autocorrelation approaches 0 as Lag increases to 20 Thus we should sample 1 value every 20 indexes to control for autocorrelation. Thus, we should resample with value 20,40 , …. to n hundred (end of our data set). This process is called thinning our data.
+
+We have now completed both burn-in and thinning of our data prerequisites for Bayesian work). Let us now create a HPD interval for our B mcmc object. Since this is an MCMC object I read in an additional formula from the cran GitHub for coda:
+
+```{r}
+HPDinterval <- function(obj, prob = 0.95, ...) UseMethod("HPDinterval")
+
+HPDinterval.mcmc <- function(obj, prob = 0.95, ...)
+{
+    obj <- as.matrix(obj)
+    vals <- apply(obj, 2, sort)
+    if (!is.matrix(vals)) stop("obj must have nsamp > 1")
+    nsamp <- nrow(vals)
+    npar <- ncol(vals)
+    gap <- max(1, min(nsamp - 1, round(nsamp * prob)))
+    init <- 1:(nsamp - gap)
+    inds <- apply(vals[init + gap, ,drop=FALSE] - vals[init, ,drop=FALSE],
+                  2, which.min)
+    ans <- cbind(vals[cbind(inds, 1:npar)],
+                 vals[cbind(inds + gap, 1:npar)])
+    dimnames(ans) <- list(colnames(obj), c("lower", "upper"))
+    attr(ans, "Probability") <- gap/nsamp
+    ans
+}
+
+HPDinterval.mcmc.list <- function(obj, prob = 0.95, ...)
+    lapply(obj, HPDinterval, prob)
+# source: https://github.com/cran/coda/blob/master/R/HPDinterval.R
+```
+
+
+```{r}
+print("The below shows the posterior mean and standard deviation")
+summary(B)
+summary(varE)
+```
+
+Now that we have derived our posterior let's sample again using Gibbs and plot the posterior distribution of undercount.
+
+```{r}
+##### Gibbs Sampler for Normal Model #############
+
+#Outputs the plot of Posterior
+
+mu=mean(gavote$undercount)
+y=gavote$undercount
+
+
+## Hyper-parameters (i.e., parameters of the prior distribution(s))
+mu_0 =1
+sigma_0 =1
+
+a =1
+b = 1
+lambd_init = 1
+
+## Gibbs Sampler
+
+# Initialization
+
+ybar=mean(y)
+# input <- list(y,mu_0,sigma_0, a, b, lambd_init)
+# Sampling function
+
+gibbs_N <- function(input, S, seed){
+  set.seed(seed)
+  ybar <- mean(input$y)
+  n <- length(input$y)
+  para1 <- matrix(NA,S, 2)
+  lambd <- input$lambd_init
+
+for(i in 1:S){
+  mu1 = (input$mu_0/input$sigma_0^2+n*lambd*ybar)/(1/input$sigma_0^2+n*lambd)
+  sigma1 =sqrt(1/(1/input$sigma_0^2)+n*lambd)
+  mu <-rnorm(1,mean=mu1,sd=sigma1)
+  a1 <-input$a +n/2
+  b1 <- input$b +sum(input$y - mu)^2/2
+  lambd <- rgamma(1, shape = a1, rate = b1)
+  para1[i,] <- c(mu,lambd)
+}
+  print(para1)
+}
+
+input <- list(y=y,mu_0=5,sigma_0 = 1, a = 1, b =1, lambd_init =1)
+output<- gibbs_N(input, S=1000, seed = 10212019)
+
+posterior_Para <- as.data.frame(output)
+names(posterior_Para) <- c("mu", "lambda=1/sigma^2")
+
+
+plot(posterior_Para[,"mu"],type='o',cex=.5,col=4)  # Traceplot
+abline(h=mean(y),col=2)
+
+```
+
+We can now visualize the posterior distribution and create an HPD interval for all the variables in the model.
+
+```{r}
+print("The below shows the posterior credibility interval")
+HPDinterval(B,prob=.95)
+```
+
+We can also see the distribution of our samples at the variable level: 
+
+```{r}
+######## Gibbs Analysis #######
+
+x = as.ts(gavote1)
+SAMPLES<-as.mcmc(x) # converting your samples into an MCMC object
+# Set lag of 20
+autocorr(SAMPLES, lags = c(20), relative=TRUE)
+
+
+plot(SAMPLES) # this produces both density and trace plot
+plot(as.vector(SAMPLES),type='o',cex=.5,col=4)
+
+burnIn=1:500
+SAMPLES1=SAMPLES[-burnIn] # removing burn-in
+plot(as.vector(SAMPLES1),type='o',cex=.5,col=2)
+summary(SAMPLES1) 
+
+effectiveSize(SAMPLES1)
+```
+
+Now we can draw from our prior and perform hypothesis testing. This is not effective as with our prior we have nothing to test against. We can, however, see the density of our posterior * sample of the prior.
+
+```{r}
+######## Bayesian Linear Hypothesis  #######
+
+# Drawing from our flat prior [0:1]
+contrast=runif(n=11, min=1e-12, max=.9999999999)
+tmp=B%*%contrast
+plot(density(tmp));abline(v=0)
+abline(v=HPDinterval(as.mcmc(tmp),p=.95),col=2,lty=2)
+mean(tmp>0)
+mean(tmp<0)
+```
+
+We can see from this regression output that it modeled the data similarly to the output of the lm() function used above. We were able to expand our sample using the Gibbs Sample, which decreased cross-variable correlation and co-linearity significantly. These aspects of the Bayesian Analysis are strengths when compared to the linear model. 
+ 
+## Final Models and Statistical Analysis
+
+Overall, we have two final models: 
+
+## OLS Frequentist Regression
+
+$$ \text{Final Model (OLS Frequentist Regression): } $$ 
+$$ \text{UNDERCOUNT} = 5.807496*10^{-3}x_1 + 2.273752*10^{-2}x_2 - 9.044148*10^{-3}x_3 + 6.082960*10^{-3}x_4 + 2.089696 * 10^{-2}x_5   -1.894076*10^{-2}x_6 \\ - 3.554025*10^{-5}x_7 -3.386005*10^{-5}x_8 + 3.282120 *10^{-5}x_9 + 2.898298*10^{-2} + \epsilon_i   $$ 
+
+$$ \text{UNDERCOUNT} = \beta_1 + \text{EQUIP}x_1 + \text{ECON}x_2 + \text{GORE}x_3 + \text{BUSH}x_4 + \text{BALLOTS}x_5 + \epsilon_i$$ 
+The above functions show both the specific numerical coefficients within our regression function as well as the generic variables they represent.
+
+## Bayesian Analysis
+
+Within a Bayesian Analysis (applied using a Normal Model) our result is our prior, posteriors and likelihood function: 
+
+$$ \text{Final Model (Bayesian Approach): } $$ 
+
+Likelihood function:
+
+$$ \text{Likelihood Function of Undercount (Y):} \\ p\left(\text{UNDERCOUNT (Y)} | \text{EQUIP,ECON,GORE,BUSH,BALLOTS}\right)=\prod_{i=1}^{n} \frac{1}{\sqrt{2 \pi \sigma^{2}}} \exp \left\{-\frac{1}{2 \sigma^{2}}\left( \text{UNDERCOUNT}_{i}-\beta_{1}-\text{EQUIP}_{2} x_{i} - \text{ECON}_3x_i - \text{GORE}_4x_i \\ -\text{BUSH}_5x_i - \text{BALLOTS}_6 x_i \right)^{2}\right\}  $$ 
+
+Prior: 
+
+$$ \text{Flat Prior:} \\ p(\beta_1 , ... , \beta_p) \propto 1 $$
+
+Posterior Distributions:
+
+$$ \text{Posterior Distribution of Regression Coefficients:} \\ p\left( \text{EQUIP,ECON,GORE,BUSH,BALLOTS} | \text{UNDERCOUNT (Y)}   \right) \propto 1 \times \prod_{i=1}^{n} \frac{1}{\sqrt{2 \pi \sigma^{2}}} \exp \left\{-\frac{1}{2 \sigma^{2}}\left(\text{UNDERCOUNT}_{i}-\beta_{1}-\text{EQUIP}_{2} x_{i} - \text{ECON}_3x_i - \text{GORE}_4x_i \\ -\text{BUSH}_5x_i - \text{BALLOTS}_6 x_i \right)^{2}\right\} $$
+
+$$ \text{In the generic formed a posterior is defined in the form of:}\\ p(\theta | y) \propto p(\theta) * p(y | \theta)$$ 
+
+Within the Bayesian Analysis we also derived our posterior numerically (for undercount), created a larger more effective sample and computed HPD credibility intervals for all the variables in the model. We also used burn-in and thinning to control for stationarity and auto-correlation respectively.
+
+## Model Diagnostics Summary 
+
+As mentioned above, our Stepwise model contains statistically significant variables, however, fails to hold some assumptions which throw its' ability to accurately model the (likely non-linear) data into question. The Bayesian Model held up all the assumptions and we successfully sampled, tuned our sample and produced posterior draws for all of our variables. 
+
+# Conclusion and Detailed Results 
+
+In the context of our problem, the result is clear. The level of income had a statistically significant effect on whether or not a location was more likely to be undercounted. This was surprisingly uncorrelated with any one type of a machine (at a significant level) which showed that economic status was a better predictor than voting machine. This is likely because in many instances the lowest performing voting machines are already in lower economic areas (resulting in co-linearity of these variables). 
+
+Overall, although this relationship was likely not very linear both models were able to successfully examine the relationship between the predictors and the predicted undercount.
+
+# Disscussions of Strengths and Weaknesses of the Models (Bayesian vs. Frequentist)
+
+The strengths of the frequentist model are its' interpretabilitiy. We are able to directly examine the effects of coefficients and add and remove variables to examine different relationships. 
+
+The weaknesses are that it is limited to modeling linear relationships, of which are data likely is not.
+
+The Bayesian Model creates a more effective data set, implementing stationarity and reducing auto-correlation. Its' main weakness is in interpretation. Though we have intervals and means (and standard errors) for an expanded data set we do not have that easily interpretable function that a reader can immediately understand and apply to make inference on new situations. This is especially a weakness in the social sciences within which researchers often would like to extrapolate models to explain more than one unique situation.
+
+# Future Ideas
+
+Detailed in paper! 
+
