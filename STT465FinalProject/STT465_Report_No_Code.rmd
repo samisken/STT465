@@ -3,6 +3,8 @@ title: "STT465_Report_No_Code"
 author: "Sam Isken"
 date: "December 9, 2019"
 output:
+  pdf_document: default
+  encoding: "UTF-8"
   word_document: default
   html_document:
     df_print: paged
@@ -13,11 +15,11 @@ output:
 
 This PDF contains the written report (no code visible). The other RMarkDown below contains the code as well as parts of the essay portions of this project (ones that are relevant to the coding scheme). I have also included a supplemental dataset I used to examine the election results at the county level of granularity. 
 
-```{r setup, include=FALSE,echo=FALSE}
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r setup2, include=FALSE, echo=FALSE}
+```{r setup2}
 knitr::opts_chunk$set(echo = TRUE)
 library(faraway)
 library(ggplot2)
@@ -27,7 +29,7 @@ library(ggplot2)
 library(corrplot)
 ```
 
-```{r Read in gavote data, echo=FALSE}
+```{r Read in gavote data}
 data("gavote")
 gavote$undercount<- (gavote$ballots - gavote$votes)/gavote$ballots
 ```
@@ -69,7 +71,7 @@ undercount: (number of ballots - number of votes) / (number of ballots)
 
 ## Surface Level Data Analysis
 
-```{r Surface Level EDA, echo=FALSE}
+```{r Surface Level EDA}
 print(paste("The range of the undercount (in percent of county votes) is:",range(gavote$undercount)[1]," , ",range(gavote$undercount)[2]))
 print(paste("The mean of undercount (in percent of county votes) is:",mean(gavote$undercount)))
 
@@ -80,7 +82,7 @@ print(paste("The max value of undercount (in percent of county of county votes) 
 
 From a surface level analysis we can see that in some counties, up to 18% of ballots were thrown out in some counties due to voting or machine errors. The average percent of votes thrown out by county was 4%. This quick look proves that this is an important topic as this easily could have swung counties in favor of the other candidate (either Gore or Bush). This provides justification for our research.
 
-```{r Load GA County Level Data, echo=FALSE}
+```{r Load GA County Level Data}
 Georgia_County_Level_Results <- read.csv("Georgia_County_Level_Results.csv")
 Georgia_County_Level_Results[] <- lapply(Georgia_County_Level_Results, as.numeric)
 Georgia_County_Level_Results$Percent_Dif <- Georgia_County_Level_Results$Bush_Percent - Georgia_County_Level_Results$Gore_Percent
@@ -91,7 +93,7 @@ head(Georgia_County_Level_Results)
 
 The data set above provides the election results at the county level for Georgia. This will assist in providing a basis / set of background knowledge for our project.
 
-```{r Georgia Election Undercount Visualization, echo=FALSE}
+```{r Georgia Election Undercount Visualization}
 # Visualizations
 ggplot(Georgia_County_Level_Results, aes(x=Percent_Dif)) + geom_histogram(bins=45,color="blue", fill="red") + geom_vline(aes(xintercept=mean(Percent_Dif)),color="blue", linetype="dashed", size=1)+
   labs(title="Distribution of Undercount (Percent of County Vote)",x="Percent of County Vote", y = "Count")
@@ -138,7 +140,7 @@ $$ \text{In the generic formed a posterior is defined in the form of:}\\ p(\thet
 These results will be further explained in both the Methods and Conclusion sections.
 
 
-```{r, echo=FALSE}
+```{r}
 # Data Cleaning
 
 # Check for na values
@@ -165,17 +167,17 @@ We will then fit a Normal Bayesian model. Here, we will discuss our likelihood f
 
 Let us now apply a more rigorous method to attempt to examine the factors that can predict the occurrence of undercount at the county level. Let us begin our exploratory analysis by examining a few rows of data:
 
-```{r Head of GAVOTE,echo=FALSE}
+```{r Head of GAVOTE}
 head(gavote)
 ```
 
 Let us now look for any correlations between our variables. 
 
-```{r Correlation Matrix,echo=FALSE}
+```{r Correlation Matrix}
 pairs(gavote)
 ```
 
-```{r Data Cleaning,echo=FALSE,results='hide'}
+```{r Data Cleaning}
 # Data Cleaning
 
 # Check for na values
@@ -198,20 +200,20 @@ We can see that:
 
 Now let us examine our dependent variable. We want to see how undercount is distributed vs. a normal distribution. 
 
-```{r Distribution of Dependant,echo=FALSE}
+```{r Distribution of Dependant}
 ggplot(gavote, aes(x=undercount)) + geom_histogram(bins=45) + stat_function(fun = dnorm, args = list(mean = mean(gavote$undercount), sd=sd(gavote$undercount)))
 ```
 
 In order to make inference and run nessecary analysis (confidence intervals etc.) prior to our Bayesian analysis we will want our dependent variable to be normally distributed. This is close enough (based on the histogram above). Our dependant variable is roughly normal with a few right side outliers.
 
 
-```{r Shapiro Wilk Test,echo=FALSE}
+```{r Shapiro Wilk Test }
 shapiro.test(gavote$undercount)
 ```
 
 Though our sample does not pass the Shapiro-Wilk test this is acceptable as we can see from our histogram that it is roughly normally distributed with some right side outliers. The Shapiro-Wilk test often fails as N becomes large (in contrast to many other statistical tests). Normally, I may remove some of the outliers and re-run this analysis but due to our small data I am only going to remove outliers within the regression diagnostics (when they are shown to be high leverage points).
 
-```{r Distribution of Categorical Variables,echo=FALSE}
+```{r Distribution of Categorical Variables }
 # Distribution of Categorical Variables 
 g <- ggplot(gavote, aes(econ))
 g + geom_bar(aes(fill=econ), width = 0.5) + 
@@ -245,14 +247,14 @@ Now, fit appropriate models for undercount as response variable with all possibl
 
 We can begin the Stepwise Variable Selection by first fitting a model including all of the variables. 
 
-```{r Stepwise Variable Selection, echo=FALSE}
+```{r Stepwise Variable Selection}
 stepwise_lm_1 <- lm(undercount~equip+econ+perAA+rural+atlanta+gore+bush+other+votes+ballots,data=gavote)
 summary(stepwise_lm_1)
 ```
 
 As we can see not nearly all of our predictors are significant. Now, let us remove insignificant variables (Performing Stepwise Variable Reduction) resulting in the following model:
 
-```{r Stepwise Variable Selection Model 2, echo=FALSE}
+```{r Stepwise Variable Selection Model 2}
 stepwise_lm_2 <- lm(undercount~equip+econ+gore+bush+ballots,data=gavote)
 summary(stepwise_lm_2)
 par(mfrow=c(2,2))
@@ -262,7 +264,7 @@ abline(stepwise_lm_2)
 
 We can now perform Regression Diagnostics. First, we can decide on outliers. I am going to use a standard Rule of Thumb: I am going to only remove outliers that have a very high leverage (greater than Cooks Distance). I attempted to remove more and it caused many errors within the model due to the act of decreasing the dimensions of already small data. I will remove FULTON.
 
-```{r Removing High Leverage Outlier, echo=FALSE}
+```{r Removing High Leverage Outlier}
 # Remove Fulton
 remove <- c("FULTON")
 gavote <- gavote[!(row.names(gavote) %in% remove), ]
@@ -270,7 +272,7 @@ gavote <- gavote[!(row.names(gavote) %in% remove), ]
 
 We can now recreate the same model:
 
-```{r Regression Model Run,  echo=FALSE}
+```{r Regression Model Run}
 stepwise_lm_2 <- lm(undercount~equip+econ+gore+bush+ballots,data=gavote)
 summary(stepwise_lm_2)
 par(mfrow=c(2,2))
@@ -297,7 +299,7 @@ Now we can perform regression diagnostics.
 
 Overall, the predictors in this model are statistically significant. However, many of our regression diagnostics do not pass so the linearity of this relationship is in question. This is expected, as many situations within the social sciences (in which politics is included) are not very linear in their relationship.
 
-```{r Regression Coefficients,echo=FALSE}
+```{r Regression Coefficients }
 ## Prediction equation coefficient
 bHat <- coef(stepwise_lm_2)
 bHat
@@ -311,7 +313,7 @@ $$ \text{UNDERCOUNT} = \beta_1 + \text{EQUIP}x_1 + \text{ECON}x_2 + \text{GORE}x
 
 The correlation between only our significant variables is: 
 
-```{r, echo=FALSE}
+```{r}
 # OLS fit (MLR) Scatterplot Comparison
 pairs(gavote) # Scatterplot matrix for ALL variables
 # Correlation Matrix for Model  with Stepwise Variable Reduction Performed 
@@ -351,7 +353,7 @@ We will now create our normal Bayesian Model.
 
 First we can examine our Frequentist Model:
 
-```{r,echo=FALSE}
+```{r }
 ########  OLS fit (Frequentist Inference)
 summary(stepwise_lm_2)
 ## Coefficients of Prediction equations
@@ -570,7 +572,7 @@ varE=SAMPLES$varE[-(1:500)]
 summary(B)
 ```
 
-Let’s now convert B and varE to mcmc objects in order to examine autocorrelation using the coda library. This will allow us to run more analysis. 
+Let us now convert B and varE to mcmc objects in order to examine autocorrelation using the coda library. This will allow us to run more analysis. 
 
 ```{r}
 # Converting to MCMC object 
@@ -586,7 +588,7 @@ autocorr.plot(B[,1],lag.max=100)
 autocorr.plot(B[,2],lag.max=100)
 ```
 
-In both instances the autocorrelation approaches 0 as Lag increases to 20 Thus we should sample 1 value every 20 indexes to control for autocorrelation. Thus, we should resample with value 20,40 , …. to n hundred (end of our data set). This process is called thinning our data.
+In both instances the autocorrelation approaches 0 as Lag increases to 20 Thus we should sample 1 value every 20 indexes to control for autocorrelation. Thus, we should resample with value 20,40,60 .. to n hundred (end of our data set). This process is called thinning our data.
 
 We have now completed both burn-in and thinning of our data prerequisites for Bayesian work). Let us now create a HPD interval for our B mcmc object. Since this is an MCMC object I read in an additional formula from the cran GitHub for coda:
 
